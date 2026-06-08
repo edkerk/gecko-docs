@@ -1,0 +1,10 @@
+[submodule "geckopy"]
+	path = geckopy
+	url = https://github.com/SysBioChalmers/geckopy.git
+	branch = main
+	shallow = true
+[submodule "GECKO"]
+	path = GECKO
+	url = https://github.com/SysBioChalmers/GECKO.git
+	branch = main
+	shallow = true

@@ -7,6 +7,34 @@ repo_url: https://github.com/SysBioChalmers/GECKO
 repo_name: SysBioChalmers/GECKO
 edit_uri: ""
 
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        # Python API (geckopy) -- collected statically by griffe from the
+        # submodule source, so the package does not need to be installed.
+        python:
+          paths: [geckopy/src]
+          options:
+            docstring_style: numpy
+            docstring_section_style: table
+            show_root_heading: false
+            show_root_toc_entry: false
+            show_source: false
+            separate_signature: true
+            show_signature_annotations: true
+        # MATLAB API (GECKO) -- pure-Python tree-sitter collection, no MATLAB
+        # runtime required. Functions are referenced by their file path
+        # relative to this config (e.g. ::: ./GECKO/src/geckomat/.../foo.m).
+        matlab:
+          paths: [GECKO/src/geckomat]
+          paths_recursive: true
+          options:
+            show_root_heading: false
+            show_root_toc_entry: false
+            show_source: false
+
 theme:
   name: material
   features:
@@ -45,6 +73,8 @@ markdown_extensions:
   - toc:
       permalink: true
   - attr_list
+  - pymdownx.tabbed:
+      alternate_style: true
 
 extra_javascript:
   - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
@@ -63,3 +93,12 @@ nav:
   - Troubleshooting: troubleshooting.md
   - Anticipated results: anticipated-results.md
   - References: references.md
+  - API reference:
+      - Overview: api/index.md
+      - Build an ecModel: api/build.md
+      - Gather kcats: api/gather-kcats.md
+      - Enzyme & EC data: api/enzyme-data.md
+      - kcat sensitivity tuning: api/kcat-sensitivity.md
+      - Limit proteins: api/limit-proteins.md
+      - Simulation & utilities: api/simulation-utilities.md
+      - Model adapter: api/adapter.md

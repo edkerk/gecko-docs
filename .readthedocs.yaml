@@ -3,6 +3,12 @@
 
 version: 2
 
+# Pull in the GECKO (MATLAB) and geckopy (Python) sources tracked as
+# git submodules, so their docstrings can be auto-documented.
+submodules:
+  include: all
+  recursive: true
+
 build:
   os: ubuntu-24.04
   tools:
