@@ -7,8 +7,21 @@ repo_url: https://github.com/SysBioChalmers/GECKO
 repo_name: SysBioChalmers/GECKO
 edit_uri: ""
 
+# Build-time hooks that keep the site resilient to structural changes in the
+# GECKO / geckopy submodules (folders or files added/removed on the tracked
+# dev branches). See scripts/build_hooks.py.
+hooks:
+  - scripts/build_hooks.py
+
 plugins:
   - search
+  # gen-files runs the generator at build time, emitting the parallel API
+  # reference trees plus the literate-nav SUMMARY from the submodule sources.
+  - gen-files:
+      scripts:
+        - scripts/gen_api_pages.py
+  - literate-nav:
+      nav_file: SUMMARY.md
   - mkdocstrings:
       default_handler: python
       handlers:
@@ -28,7 +41,14 @@ plugins:
         # runtime required. Functions are referenced by their file path
         # relative to this config (e.g. ::: ./GECKO/src/geckomat/.../foo.m).
         matlab:
-          paths: [GECKO/src/geckomat]
+          paths:
+            - GECKO/src/geckomat/change_model
+            - GECKO/src/geckomat/gather_kcats
+            - GECKO/src/geckomat/get_enzyme_data
+            - GECKO/src/geckomat/kcat_sensitivity_analysis
+            - GECKO/src/geckomat/limit_proteins
+            - GECKO/src/geckomat/model_adapter
+            - GECKO/src/geckomat/utilities
           paths_recursive: true
           options:
             show_root_heading: false
@@ -93,12 +113,4 @@ nav:
   - Troubleshooting: troubleshooting.md
   - Anticipated results: anticipated-results.md
   - References: references.md
-  - API reference:
-      - Overview: api/index.md
-      - Build an ecModel: api/build.md
-      - Gather kcats: api/gather-kcats.md
-      - Enzyme & EC data: api/enzyme-data.md
-      - kcat sensitivity tuning: api/kcat-sensitivity.md
-      - Limit proteins: api/limit-proteins.md
-      - Simulation & utilities: api/simulation-utilities.md
-      - Model adapter: api/adapter.md
+  - API reference: api/
