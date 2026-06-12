@@ -51,6 +51,7 @@ plugins:
             - GECKO/src/geckomat/utilities
           paths_recursive: true
           options:
+            docstring_style: numpy
             show_root_heading: false
             show_root_toc_entry: false
             show_source: false
