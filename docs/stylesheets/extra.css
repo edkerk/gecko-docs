@@ -1,0 +1,185 @@
+/* ===== GECKO brand palette (green) =====================================
+   Sourced from GECKO.png on the update-gecko-logo branch -- a flat single-
+   tone gecko icon + wordmark, RGB(67,104,75). Shades below are HSL
+   adjustments of that exact color (same hue), not eyeballed. */
+:root {
+  --gecko-green:       #43684B;
+  --gecko-green-dark:  #273D2C;
+  --gecko-green-light: #5F936A;
+  --gecko-accent:      #2D6E3B;
+}
+
+[data-md-color-scheme="default"] {
+  /* MATLAB/Python switch: a neutral gray pill, not the green brand colour --
+     it is a control, not a call to action. */
+  --gecko-tab-track:            rgba(0, 0, 0, .05);
+  --gecko-tab-active:           #5f6773;
+  --gecko-tab-active-fg:        #ffffff;
+  --md-primary-fg-color:        var(--gecko-green);
+  --md-primary-fg-color--light: var(--gecko-green-light);
+  --md-primary-fg-color--dark:  var(--gecko-green-dark);
+  --md-primary-bg-color:        #ffffff;
+  --md-primary-bg-color--light: rgba(255, 255, 255, 0.75);
+  --md-accent-fg-color:         var(--gecko-accent);
+  --md-typeset-a-color:         var(--gecko-green);
+}
+
+/* Dark mode: keep the green header, lift links/accent for contrast */
+[data-md-color-scheme="slate"] {
+  --gecko-tab-track:            rgba(255, 255, 255, .06);
+  --gecko-tab-active:           #7a828f;
+  --gecko-tab-active-fg:        #10151c;
+  --md-primary-fg-color:        var(--gecko-green);
+  --md-primary-bg-color:        #ffffff;
+  --md-primary-bg-color--light: rgba(255, 255, 255, 0.75);
+  --md-accent-fg-color:         #87d398;
+  --md-typeset-a-color:         #87d398;
+}
+
+/* ===== Feature cards (Material grid cards) ============================ */
+.md-typeset .grid.cards > ul > li {
+  border-radius: 12px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.md-typeset .grid.cards > ul > li:hover {
+  border-color: var(--gecko-accent);
+}
+
+/* ===== Denser, sectioned sidebar ====================================== */
+.md-nav { font-size: .72rem; }
+.md-nav__item .md-nav__item { font-size: .98em; }
+.md-nav__item--section > .md-nav__link {
+  font-weight: 700;
+  color: var(--md-default-fg-color);
+}
+
+/* ===== Bold active nav item ========================================= */
+.md-nav__item--active > .md-nav__link { font-weight: 700; }
+.md-tabs__item--active .md-tabs__link { font-weight: 700; }
+
+/* ===== Homepage (cobrapy-inspired) ================================== */
+.gd-hero { text-align: center; padding: 2rem 0 1.5rem; }
+.gd-hero img.gd-hero-logo { max-width: 420px; width: 100%; height: auto; margin-bottom: .5rem; }
+.gd-tag {
+  display: inline-block; font-size: .7rem; font-weight: 700;
+  letter-spacing: .07em; text-transform: uppercase;
+  color: var(--gecko-green);
+  background: rgba(67,104,75,.12);
+  border-radius: 20px; padding: .2rem .75rem; margin-bottom: .6rem;
+}
+.gd-hero h1 { font-size: 1.9rem; line-height: 1.25; margin-bottom: .5rem; }
+.gd-tagline {
+  font-size: .95rem; color: var(--md-default-fg-color--light);
+  max-width: 560px; margin: 0 auto .9rem; line-height: 1.65;
+}
+.gd-badges { display: flex; justify-content: center; gap: .35rem; flex-wrap: wrap; }
+.gd-badge {
+  font-size: .68rem; padding: .15rem .5rem;
+  border-radius: .25rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  color: var(--md-default-fg-color--light);
+}
+
+/* install block */
+.gd-install {
+  background: var(--md-code-bg-color);
+  border-radius: .5rem; padding: 1rem 1.25rem; margin: 1.5rem 0 1.5rem;
+}
+.gd-install-tabs {
+  display: flex; gap: .15rem; flex-wrap: wrap;
+  background: var(--md-default-bg-color);
+  border-radius: .4rem; padding: .15rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  width: fit-content; margin-bottom: .6rem;
+}
+.gd-itab {
+  font-size: .72rem; font-weight: 600;
+  padding: .2rem .65rem; border-radius: .25rem;
+  border: none; background: transparent;
+  color: var(--md-default-fg-color--light); cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.gd-itab.active { background: var(--gecko-green); color: #fff; }
+.gd-code-row {
+  display: flex; align-items: center; gap: .5rem;
+  background: var(--md-default-bg-color);
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: .3rem; padding: .5rem .8rem;
+}
+.gd-code-row code { font-size: .8rem; flex: 1; }
+.gd-copy {
+  background: none; border: none; cursor: pointer; padding: 0;
+  color: var(--md-default-fg-color--light); font-size: .85rem;
+  opacity: .6; flex-shrink: 0;
+}
+.gd-copy:hover { opacity: 1; }
+
+/* section labels and divider */
+.gd-section-label {
+  font-size: .68rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--md-default-fg-color--light);
+  margin: 1.5rem 0 .75rem 0;
+}
+hr.gd-divider {
+  border: none; border-top: 1px solid var(--md-default-fg-color--lightest);
+  margin: 1.5rem 0 1rem;
+}
+
+/* features grid — 3 columns */
+.md-typeset .grid.cards.gd-features > ul {
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+}
+.gd-feat-icon { font-size: 1.4rem; display: block; margin-bottom: .3rem; }
+
+/* docs cards — 3 columns */
+.md-typeset .grid.cards.gd-docs > ul {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* ===== MATLAB / Python pill toggle (content tabs site-wide) ========== */
+.md-typeset .tabbed-labels {
+  display: inline-flex;
+  /* Material's own rule sets display: flex, which stretches the track across the
+     whole column; a segmented control should be as wide as its labels. */
+  width: max-content;
+  max-width: 100%;
+  background: var(--gecko-tab-track);
+  border-radius: 5px;
+  padding: 2px;
+  gap: 1px;
+  border-bottom: none !important;
+  overflow: visible;
+}
+/* Material puts the click target (and its generous padding) on an anchor inside
+   the label, so shrinking the label alone changes nothing -- reset the anchor
+   and let the label's own padding size the pill. */
+.md-typeset .tabbed-labels > label > a {
+  padding: 0;
+  line-height: inherit;
+  color: inherit;
+}
+.md-typeset .tabbed-labels > label {
+  padding: .15rem .5rem;
+  border-radius: 4px;
+  border-bottom: none !important;
+  font-weight: 500;
+  font-size: .62rem;
+  line-height: 1.5;
+  color: var(--md-default-fg-color--light);
+  transition: background .15s, color .15s;
+  white-space: nowrap;
+  margin-bottom: 0;
+}
+.md-typeset .tabbed-labels > label:hover {
+  color: var(--md-default-fg-color);
+}
+/* Active tab state — one rule per possible tab position */
+.md-typeset .tabbed-alternate input:nth-child(1):checked ~ .tabbed-labels label:nth-child(1),
+.md-typeset .tabbed-alternate input:nth-child(2):checked ~ .tabbed-labels label:nth-child(2),
+.md-typeset .tabbed-alternate input:nth-child(3):checked ~ .tabbed-labels label:nth-child(3),
+.md-typeset .tabbed-alternate input:nth-child(4):checked ~ .tabbed-labels label:nth-child(4) {
+  background: var(--gecko-tab-active);
+  color: var(--gecko-tab-active-fg);
+  font-weight: 600;
+}

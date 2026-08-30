@@ -5,6 +5,17 @@ The results described here come from running the commands in
 output may differ somewhat numerically depending on updates at the various
 databases and on the solver used.
 
+!!! note "MATLAB-specific numbers"
+    This page reports the specific numeric output of one MATLAB run and is
+    not repeated per-language: geckopy's `tutorials/full_ecModel/protocol.py`
+    follows the same steps and should reach broadly similar conclusions, but
+    its exact printed numbers are not reproduced here (they depend on the
+    BRENDA/DLKcat/PubChem data snapshot and solver at the time it was run,
+    same as the MATLAB numbers depend on when *that* was run). Struct field
+    names referenced below (`wildcardLvl`, `topAbsUsage`, ...) are MATLAB
+    names; see the corresponding stage page for the geckopy attribute or
+    DataFrame column name.
+
 ## Stage 0 and Stage 1
 
 - **Step 1.** The adapter folder is initiated at the user-specified location,
@@ -238,17 +249,29 @@ databases and on the solver used.
 
     Simulating the same condition in the conventional GEM confirms the cause:
 
-    ```matlab
-    model = constrainFluxData(model, fluxData);
-    sol = solveLP(model);
-    fprintf('Growth rate that is reached: %f /hour\n', abs(sol.f))
-    ```
+    === "MATLAB"
 
-    Output:
+        ```matlab
+        model = constrainFluxData(model, fluxData);
+        sol = solveLP(model);
+        fprintf('Growth rate that is reached: %f /hour\n', abs(sol.f))
+        ```
 
-    ```
-    Growth rate that is reached: 0.0889 /hour
-    ```
+        Output:
+
+        ```
+        Growth rate that is reached: 0.0889 /hour
+        ```
+
+    === "Python"
+
+        ```python
+        from geckopy import apply_flux_data_constraints
+
+        apply_flux_data_constraints(model, flux_data)
+        sol = model.optimize()
+        print(f"Growth rate that is reached: {sol.objective_value:.4f} /hour")
+        ```
 
     This confirms the growth rate is overconstrained by exchange rates, possibly
     because of measurement errors, rather than enzyme constraints.

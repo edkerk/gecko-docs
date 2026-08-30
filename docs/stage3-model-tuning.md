@@ -48,16 +48,33 @@ simulate a realistic growth rate. Microorganisms should reach their maximum
 growth rate if nutrient supply is not limiting. To allow unconstrained uptake of
 the carbon source:
 
-```matlab
-ecModel = setParam(ecModel, 'lb', params.c_source, -1000);
-```
+=== "MATLAB"
 
-Or by directly referring to the glucose exchange reaction in the
-*S. cerevisiae* ecModel:
+    ```matlab
+    ecModel = setParam(ecModel, 'lb', params.c_source, -1000);
+    ```
 
-```matlab
-ecModel = setParam(ecModel, 'lb', 'r_1714', -1000);
-```
+    Or by directly referring to the glucose exchange reaction in the
+    *S. cerevisiae* ecModel:
+
+    ```matlab
+    ecModel = setParam(ecModel, 'lb', 'r_1714', -1000);
+    ```
+
+=== "Python"
+
+    geckopy/cobrapy has no `setParam` wrapper: bounds are attributes on the
+    `cobra.Reaction` object itself.
+
+    ```python
+    ec_model.reactions.get_by_id(params.c_source).lower_bound = -1000
+    ```
+
+    Or directly:
+
+    ```python
+    ec_model.reactions.get_by_id("r_1714").lower_bound = -1000
+    ```
 
 **Step 34.** In this example the glucose exchange reaction is defined as
 `glucose[e] <=>`. A positive, forward flux represents dissipation from the
@@ -65,19 +82,43 @@ system, so a negative flux signifies uptake into the cytoplasm. Modify the
 constraint on glucose uptake by setting a negative lower bound. Query the
 direction of a reaction with:
 
-```matlab
-constructEquations(ecModel, 'r_1714');
-```
+=== "MATLAB"
+
+    ```matlab
+    constructEquations(ecModel, 'r_1714');
+    ```
+
+=== "Python"
+
+    cobrapy reactions print their own equation:
+
+    ```python
+    print(ec_model.reactions.get_by_id("r_1714").reaction)
+    ```
 
 **Step 35.** Set growth as the objective, predict the flux distribution and
 print the growth rate:
 
-```matlab
-ecModel = setParam(ecModel, 'obj', params.bioRxn, 1);
-sol = solveLP(ecModel);
-bioRxnIdx = getIndexes(ecModel, params.bioRxn, 'rxns');
-fprintf('Growth rate: %f /hour\n', sol.x(bioRxnIdx))
-```
+=== "MATLAB"
+
+    ```matlab
+    ecModel = setParam(ecModel, 'obj', params.bioRxn, 1);
+    sol = solveLP(ecModel);
+    bioRxnIdx = getIndexes(ecModel, params.bioRxn, 'rxns');
+    fprintf('Growth rate: %f /hour\n', sol.x(bioRxnIdx))
+    ```
+
+=== "Python"
+
+    ```python
+    ec_model.objective = params.bio_rxn
+    sol = ec_model.optimize()
+    print(f"Growth rate: {sol.fluxes[params.bio_rxn]:.4f} /hour")
+    ```
+
+    Setting `.objective` to a reaction id maximizes it by default — there is
+    no separate "set objective coefficient" call, and no reaction-index
+    lookup: `sol.fluxes` is a pandas Series indexed by reaction id.
 
 **Step 36.** Examine the predicted growth rate. In this example the ecModel
 reaches a growth rate far lower than 0.41 h^-1 (the maximum growth rate of
@@ -97,14 +138,28 @@ growth rate. Three reasons can be systematically checked:
 conventional GEM (without enzyme constraints) with the same exchange flux
 constraints:
 
-```matlab
-model = loadConventionalGEM();
-model = setParam(model, 'lb', params.c_source, -1000);
-model = setParam(model, 'obj', params.bioRxn, 1);
-sol = solveLP(model);
-bioRxnIdx = getIndexes(model, params.bioRxn, 'rxns');
-fprintf('Growth rate: %f /hour\n', sol.x(bioRxnIdx))
-```
+=== "MATLAB"
+
+    ```matlab
+    model = loadConventionalGEM();
+    model = setParam(model, 'lb', params.c_source, -1000);
+    model = setParam(model, 'obj', params.bioRxn, 1);
+    sol = solveLP(model);
+    bioRxnIdx = getIndexes(model, params.bioRxn, 'rxns');
+    fprintf('Growth rate: %f /hour\n', sol.x(bioRxnIdx))
+    ```
+
+=== "Python"
+
+    ```python
+    from geckopy import load_conventional_gem
+
+    model = load_conventional_gem(adapter)
+    model.reactions.get_by_id(params.c_source).lower_bound = -1000
+    model.objective = params.bio_rxn
+    sol = model.optimize()
+    print(f"Growth rate: {sol.fluxes[params.bio_rxn]:.4f} /hour")
+    ```
 
 If the conventional GEM also cannot reach the maximum growth rate, the starting
 GEM contains errors in its stoichiometry or constraints that should be resolved
@@ -121,36 +176,91 @@ the simplest way to enable the intended growth is to relax the constraint on the
 protein pool usage reaction, relieving all enzyme constraints at once. Set the
 lower bound to -1,000 (for reaction direction, see Step 34):
 
-```matlab
-ecModel = setParam(ecModel, 'lb', 'prot_pool_exchange', -1000);
-```
+=== "MATLAB"
+
+    ```matlab
+    ecModel = setParam(ecModel, 'lb', 'prot_pool_exchange', -1000);
+    ```
+
+=== "Python"
+
+    !!! warning "prot_pool_exchange runs in the opposite direction — a known GECKO inconsistency, not a design choice"
+        MATLAB GECKO's `prot_pool_exchange` still carries a *negative* flux
+        (protein flows out of the model, `bounds = (-1000, 0)` by default),
+        so relaxing it means lowering the lower bound. The individual
+        `usage_prot_*` reactions were recently swapped in GECKO to run
+        *forward* instead; `prot_pool_exchange` should have been swapped to
+        match at the same time, but wasn't. geckopy implements the corrected,
+        consistent forward convention throughout — both `usage_prot_*` and
+        `prot_pool_exchange` run forward (`bounds = (0, 1000)`), so relaxing
+        `prot_pool_exchange` means raising the upper bound instead of
+        lowering the lower bound.
+
+        This is a real difference between current GECKO (MATLAB, described
+        here) and geckopy today, expected to be resolved by a matching fix in
+        a future GECKO release — not a permanent, intentional divergence.
+        Keep it in mind for every `prot_pool_exchange` / `usage_prot_*` bound
+        or objective coefficient below.
+
+    ```python
+    ec_model.reactions.prot_pool_exchange.upper_bound = 1000
+    ```
 
 **Step 41.** With neither a protein pool constraint nor a nutrient constraint,
 predict the lowest protein pool usage that still supports the experimental
 maximum growth rate:
 
-```matlab
-ecModel = setParam(ecModel, 'lb', 'r_4041', 0.41);
-ecModel = setParam(ecModel, 'obj', 'prot_pool_exchange', 1);
-sol = solveLP(ecModel);
-protPoolIdx = strcmp(ecModel.rxns, 'prot_pool_exchange');
-fprintf('Protein pool usage is: %.0f mg/gDCW\n', abs(sol.x(protPoolIdx)))
-```
+=== "MATLAB"
 
-!!! warning "Critical step"
-    Because of the direction of the exchange reaction (Step 34), minimization of
-    protein pool usage is implied by using `1` (not `-1`) as the objective
-    coefficient.
+    ```matlab
+    ecModel = setParam(ecModel, 'lb', 'r_4041', 0.41);
+    ecModel = setParam(ecModel, 'obj', 'prot_pool_exchange', 1);
+    sol = solveLP(ecModel);
+    protPoolIdx = strcmp(ecModel.rxns, 'prot_pool_exchange');
+    fprintf('Protein pool usage is: %.0f mg/gDCW\n', abs(sol.x(protPoolIdx)))
+    ```
+
+    !!! warning "Critical step"
+        Because of the direction of the exchange reaction (Step 34),
+        minimization of protein pool usage is implied by using `1` (not
+        `-1`) as the objective coefficient.
+
+=== "Python"
+
+    Because `prot_pool_exchange` runs forward in geckopy, minimizing its
+    usage means minimizing the reaction directly (a plain positive
+    objective, then optimizing in the `min` direction) — the opposite of
+    MATLAB's "maximize with coefficient +1" trick:
+
+    ```python
+    ec_model.reactions.get_by_id("r_4041").lower_bound = 0.41
+    ec_model.objective = "prot_pool_exchange"
+    ec_model.objective_direction = "min"
+    sol = ec_model.optimize()
+    pool_usage = sol.fluxes["prot_pool_exchange"]
+    print(f"Protein pool usage is: {pool_usage:.0f} mg/gDCW")
+    ```
 
 **Step 42.** Set the predicted protein pool usage as the constraint on the
 protein pool exchange reaction, then revert the previously asserted objective
 function and growth rate constraint:
 
-```matlab
-ecModel = setParam(ecModel, 'lb', protPoolIdx, sol.x(protPoolIdx));
-ecModel = setParam(ecModel, 'lb', 'r_4041', 0);
-ecModel = setParam(ecModel, 'obj', 'r_4041', 1);
-```
+=== "MATLAB"
+
+    ```matlab
+    ecModel = setParam(ecModel, 'lb', protPoolIdx, sol.x(protPoolIdx));
+    ecModel = setParam(ecModel, 'lb', 'r_4041', 0);
+    ecModel = setParam(ecModel, 'obj', 'r_4041', 1);
+    ```
+
+=== "Python"
+
+    ```python
+    ec_model.reactions.prot_pool_exchange.upper_bound = pool_usage
+    ec_model.reactions.get_by_id("r_4041").lower_bound = 0
+    ec_model.objective = "r_4041"
+    ec_model.objective_direction = "max"
+    ```
 
 While this always yields an ecModel that reaches the intended growth rate
 (assuming the conventional GEM can too), it often sets the protein pool usage to
@@ -169,16 +279,35 @@ contributes most to overconstraining the model, though not necessarily the one
 most deviating from its in situ value. First revert the protein pool constraint
 to a realistic value (Step 32), then tune and report the changes:
 
-```matlab
-ecModel = setProtPoolSize(ecModel);
-[ecModel, tunedKcats] = sensitivityTuning(ecModel);
-struct2table(tunedKcats)
-```
+=== "MATLAB"
 
-**Step 44.** Look at the report. The `tunedKcats` output documents which
-$k_{cat}$ values were modified, with their previous value and the catalyzed
-reaction. Inspect this to find whether any modified value was initially gathered
-wrongly from a $k_{cat}$ source.
+    ```matlab
+    ecModel = setProtPoolSize(ecModel);
+    [ecModel, tunedKcats] = sensitivityTuning(ecModel);
+    struct2table(tunedKcats)
+    ```
+
+=== "Python"
+
+    ```python
+    from geckopy import sensitivity_tuning, set_prot_pool_size
+
+    set_prot_pool_size(ec_model)
+    tuning_result = sensitivity_tuning(ec_model)
+    ```
+
+    `sensitivity_tuning` mutates `ec_model` in place (no separate returned
+    model) and returns a `TunedKcatsResult` with a `.rxns` field (and the
+    previous/tuned values); with no explicit growth-rate argument it targets
+    `params.gr_exp` from the adapter. Not available for light ecModels
+    (raises `NotImplementedError` if `ec_model.ec.gecko_light` is `True`).
+    The Bayesian ABC-SMC variant introduced in GECKO MATLAB 3.3.0
+    (`bayesianSensitivityTuning`) is not yet ported to geckopy.
+
+**Step 44.** Look at the report. The `tunedKcats` (Python: `tuning_result`)
+output documents which $k_{cat}$ values were modified, with their previous
+value and the catalyzed reaction. Inspect this to find whether any modified
+value was initially gathered wrongly from a $k_{cat}$ source.
 
 ## Evaluate the tuned kcat values
 
@@ -197,14 +326,26 @@ wrongly from a $k_{cat}$ source.
 higher than the original (original 0.05 s^-1, tuned 5 s^-1), with BRENDA as the
 original source. Get its location in the `kcatList`:
 
-```matlab
-rxnIdx = find(strcmp(kcatList_merged.rxns, 'r_0079'));
-kcatList_merged.wildcardLvl(rxnIdx)
-kcatList_merged.eccodes(rxnIdx)
-kcatList_merged.origin(rxnIdx)
-```
+=== "MATLAB"
 
-This yields a `wildcardLvl` of 0, EC number 6.3.5.3 and origin 4 (any organism,
+    ```matlab
+    rxnIdx = find(strcmp(kcatList_merged.rxns, 'r_0079'));
+    kcatList_merged.wildcardLvl(rxnIdx)
+    kcatList_merged.eccodes(rxnIdx)
+    kcatList_merged.origin(rxnIdx)
+    ```
+
+=== "Python"
+
+    kcat lists are `pandas.DataFrame`s in geckopy (one row per reaction),
+    rather than a struct of parallel arrays, so this is a row lookup:
+
+    ```python
+    row = kcat_list_merged.loc[kcat_list_merged["rxn_id"] == "r_0079"].iloc[0]
+    print(row["wildcard_level"], row["eccode"], row["origin"])
+    ```
+
+This yields a wildcard level of 0, EC number 6.3.5.3 and origin 4 (any organism,
 any substrate, kcat value).
 
 **Step 46.** Look at the specific
@@ -220,20 +361,28 @@ activity with glutamine as substrate, which would be more reasonable to use.
 
 **Step 48.** Calculate the activity with the more suitable substrate. The
 specific activity was reported as 2.15 micromol/min/mg protein. Because
-micromol/min/mg protein equals mmol/min/g protein, convert to mol/s/g protein:
+micromol/min/mg protein equals mmol/min/g protein, convert to mol/s/g protein,
+then use the MW of the enzyme to convert to s^-1:
 
-```matlab
-convKcat = 2.15;
-convKcat = convKcat / 1000;
-convKcat = convKcat / 60;
-```
+=== "MATLAB"
 
-With the MW of the enzyme, convert to s^-1:
+    ```matlab
+    convKcat = 2.15;
+    convKcat = convKcat / 1000;
+    convKcat = convKcat / 60;
+    enzMW = ecModel.ec.mw(strcmp(ecModel.ec.enzymes, 'P38972'));
+    convKcat = convKcat * enzMW
+    ```
 
-```matlab
-enzMW = ecModel.ec.mw(strcmp(ecModel.ec.enzymes, 'P38972'));
-convKcat = convKcat * enzMW
-```
+=== "Python"
+
+    ```python
+    enz_idx = ec_model.ec.enzymes.index("P38972")
+    enz_mw = ec_model.ec.mw[enz_idx]
+    sa = 2.15  # umol/min/mg protein
+    conv_kcat = sa / 1000 / 60 * enz_mw
+    print(conv_kcat)
+    ```
 
 **Step 49.** Compare the new value with the tuned value. Here the converted
 $k_{cat}$ is 5.34, not too dissimilar to the value of 5 reached by
@@ -243,10 +392,24 @@ $k_{cat}$ is 5.34, not too dissimilar to the value of 5 reached by
 You can either document it in `customKcats.tsv` (used in Step 28) or apply it
 directly:
 
-```matlab
-ecModel = setKcatForReactions(ecModel, 'r_0079', 5.34);
-ecModel = applyKcatConstraints(ecModel);
-```
+=== "MATLAB"
+
+    ```matlab
+    ecModel = setKcatForReactions(ecModel, 'r_0079', 5.34);
+    ecModel = applyKcatConstraints(ecModel);
+    ```
+
+=== "Python"
+
+    ```python
+    from geckopy import apply_kcat_constraints, set_kcat_for_reactions
+
+    set_kcat_for_reactions(ec_model, ["r_0079"], 5.34)
+    apply_kcat_constraints(ec_model)
+    ```
+
+    `set_kcat_for_reactions` takes a list of reaction ids (even for one
+    reaction) and a single kcat value applied to all of them.
 
 **Step 51.** After repeating this for each tuned value, consider the results. If
 convincing evidence exists that the original value is more realistic, the
@@ -260,71 +423,174 @@ the conventional GEM before using it to reconstruct an ecModel.
 simulate the physiological data provided. Before progressing to Stages 4 and 5,
 it is recommended to save it:
 
-```matlab
-saveEcModel(ecModel);
-```
+=== "MATLAB"
+
+    ```matlab
+    saveEcModel(ecModel);
+    ```
+
+=== "Python"
+
+    ```python
+    from geckopy import save_ec_model
+
+    save_ec_model(ec_model, "ecYeastGEM.yml", adapter=adapter)
+    ```
 
 ## Box 2: Selection of RAVEN toolbox functions
 
-These functions work on both conventional GEMs and ecModels.
+These operations work on both conventional GEMs and ecModels, in both
+languages (RAVEN toolbox functions in MATLAB, cobrapy idioms in Python).
 
 Set the upper bound of a reaction (see `ecModel.rxns`) to ten:
 
-```matlab
-ecModel = setParam(ecModel, 'ub', 'r_0003', 10);
-```
+=== "MATLAB"
+
+    ```matlab
+    ecModel = setParam(ecModel, 'ub', 'r_0003', 10);
+    ```
+
+=== "Python"
+
+    ```python
+    ec_model.reactions.get_by_id("r_0003").upper_bound = 10
+    ```
 
 Set the lower bound of a reaction to zero:
 
-```matlab
-ecModel = setParam(ecModel, 'lb', 'r_0003', 0);
-```
+=== "MATLAB"
+
+    ```matlab
+    ecModel = setParam(ecModel, 'lb', 'r_0003', 0);
+    ```
+
+=== "Python"
+
+    ```python
+    ec_model.reactions.get_by_id("r_0003").lower_bound = 0
+    ```
 
 Set the objective to maximize flux through the biomass reaction:
 
-```matlab
-ecModel = setParam(ecModel, 'obj', params.bioRxn, 1);
-```
+=== "MATLAB"
+
+    ```matlab
+    ecModel = setParam(ecModel, 'obj', params.bioRxn, 1);
+    ```
+
+=== "Python"
+
+    ```python
+    ec_model.objective = params.bio_rxn
+    ```
 
 Perform FBA, optimizing the objective:
 
-```matlab
-sol = solveLP(ecModel);
-```
+=== "MATLAB"
+
+    ```matlab
+    sol = solveLP(ecModel);
+    ```
+
+=== "Python"
+
+    ```python
+    sol = ec_model.optimize()
+    ```
 
 Perform parsimonious FBA, optimizing the objective and minimizing the total sum
 of flux:
 
-```matlab
-sol = solveLP(ecModel, 1);
-```
+=== "MATLAB"
 
-Inspect the nonzero fluxes through exchange reactions (this includes usage
-reactions for enzymes constrained by their concentration, but not enzymes that
-draw from the protein pool, because pool usage is the exchange reaction in that
-case):
+    ```matlab
+    sol = solveLP(ecModel, 1);
+    ```
 
-```matlab
-printFluxes(ecModel, sol.x)
-```
+=== "Python"
 
-Inspect the nonzero fluxes through all reactions:
+    ```python
+    from cobra.flux_analysis import pfba
 
-```matlab
-printFluxes(ecModel, sol.x, false)
-```
+    sol = pfba(ec_model)
+    ```
 
-Export the results to a Microsoft Excel file (this file does not contain content
+    geckopy also offers `pfba_enzymes(ec_model)`, which instead minimizes
+    only the L1 norm of `usage_prot_*` fluxes (enzyme usage) rather than all
+    reaction fluxes — useful for the enzyme-usage inspection in
+    [Stage 5](stage5-simulation-analysis.md#enzyme-usage). It is not
+    available for light ecModels.
+
+Inspect the nonzero fluxes:
+
+=== "MATLAB"
+
+    Through exchange reactions (this includes usage reactions for enzymes
+    constrained by their concentration, but not enzymes that draw from the
+    protein pool, because pool usage is the exchange reaction in that case):
+
+    ```matlab
+    printFluxes(ecModel, sol.x)
+    ```
+
+    Through all reactions:
+
+    ```matlab
+    printFluxes(ecModel, sol.x, false)
+    ```
+
+=== "Python"
+
+    `sol.fluxes` is a pandas Series indexed by reaction id, so this is
+    ordinary pandas filtering — through all reactions:
+
+    ```python
+    print(sol.fluxes[sol.fluxes != 0])
+    ```
+
+    Restricted to exchange reactions:
+
+    ```python
+    exchange_ids = [r.id for r in ec_model.exchanges]
+    print(sol.fluxes[exchange_ids][sol.fluxes[exchange_ids] != 0])
+    ```
+
+Export the results to a spreadsheet (this file does not contain content
 from the `ecModel.ec` structure, but is convenient for quickly finding reaction
 identifiers):
 
-```matlab
-exportToExcelFormat(ecModel, 'filename.xlsx');
-```
+=== "MATLAB"
+
+    ```matlab
+    exportToExcelFormat(ecModel, 'filename.xlsx');
+    ```
+
+=== "Python"
+
+    geckopy has no dedicated spreadsheet exporter; write the solution
+    directly with pandas:
+
+    ```python
+    sol.fluxes.to_excel("filename.xlsx")
+    ```
 
 Export the ecModel to an SBML file for use in other constraint-based model
 software packages:
 
-```matlab
-exportModel(ecModel, 'filename.xml');
-```
+=== "MATLAB"
+
+    ```matlab
+    exportModel(ecModel, 'filename.xml');
+    ```
+
+=== "Python"
+
+    ```python
+    import cobra
+
+    cobra.io.write_sbml_model(ec_model, "filename.xml")
+    ```
+
+    As noted in [Stage 1](stage1-structure-expansion.md#save-the-ecmodel),
+    this plain-cobrapy SBML export does not retain the `ec_model.ec` fields
+    — same caveat as MATLAB's `exportModel`.
