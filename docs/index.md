@@ -111,16 +111,23 @@ learning-predicted enzyme kinetics through DLKcat, which makes it possible to
 build ecModels for virtually any organism or cell line even in the absence of
 experimental data.
 
-!!! tip "GECKO 4 is in development"
-    This protocol documents **GECKO 3.0** — the numbered stages and steps
-    follow the published Nature Protocols pipeline (`protocol.m`) exactly.
-    GECKO development is now moving towards **GECKO 4.0**, which changes a
-    few things: the direction convention of the protein pool and enzyme
-    usage reactions, and a preference for the OpenKineticsPredictor (OKP)
-    service over a locally-run DLKcat for kcat prediction. geckopy already
-    targets GECKO 4 behavior. Pages below flag GECKO 4-specific changes with
-    a box like this one, alongside the GECKO 3 steps they'll eventually
-    replace.
+!!! tip "This protocol is GECKO 3.0; the current software has moved on"
+    The numbered stages and steps below follow the published Nature
+    Protocols pipeline (`protocol.m`) exactly, which describes **GECKO
+    3.0**. Development since then has continued on GECKO's `develop4`
+    branch — the line this site tracks — heading towards a **GECKO 4.0**
+    release, and several of those changes are **already implemented** in
+    the current software even though the protocol text hasn't caught up
+    yet: the protein pool and enzyme usage reactions now run in the
+    forward direction ([PR #419](https://github.com/SysBioChalmers/GECKO/pull/419)),
+    kcat prediction can go through the hosted OpenKineticsPredictor service
+    instead of a local DLKcat, kcat-list merging now generalizes to any
+    number of sources, and a few new analysis functions
+    (`getEnzymeBottlenecks`, `pfbaEnzymes`, `relaxProteomicsGreedy`) aren't
+    part of the original protocol at all. geckopy, being newer, targets this
+    current behavior directly rather than the original GECKO 3.0 protocol.
+    Pages below flag each of these with a box like this one, alongside the
+    GECKO 3.0 protocol steps they sit next to.
 
 ## How the protocol is organized
 

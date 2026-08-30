@@ -1,4 +1,4 @@
-# GECKO Toolbox 3.0 Protocol Documentation
+# GECKO Documentation
 
 This repository contains a documentation version of the protocol:
 

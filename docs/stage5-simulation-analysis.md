@@ -227,6 +227,38 @@ glucose uptake, then report the top ten highly used enzymes:
     `report_enzyme_usage` are also full-model only (`NotImplementedError` on
     a light ecModel, as in MATLAB).
 
+!!! tip "GECKO 4: rank enzymes by shadow price (not part of the original protocol)"
+    Both languages also offer a more direct bottleneck ranking than
+    absolute usage: it solves the model and ranks enzymes by the absolute
+    shadow price of their mass-balance constraint — how much the objective
+    would improve if that enzyme had more capacity — rather than by how
+    much of it is currently used. Not part of the original Nature Protocols
+    procedure; not available for light ecModels. Interestingly, this one
+    ported in the other direction: it originated in an older, unrelated
+    Python `geckopy` package (Carrasco et al., 2023) and was ported first
+    into current geckopy, then into MATLAB GECKO.
+
+    === "MATLAB"
+
+        ```matlab
+        bottlenecks = getEnzymeBottlenecks(ecModel, 'top', 10);
+        ```
+
+        Returns a table with one row per enzyme: `uniprot`, `gene`,
+        `shadowPrice`, `flux`, `capUsage` and `upperBound`, sorted by
+        descending absolute shadow price.
+
+    === "Python"
+
+        ```python
+        from geckopy import get_enzyme_bottlenecks
+
+        bottlenecks = get_enzyme_bottlenecks(ec_model, top=10)
+        ```
+
+        Returns a pandas DataFrame indexed by uniprot id with columns
+        `gene`, `shadow_price`, `flux`, `cap_usage` and `upper_bound`.
+
 ## Compare flux distributions of different models
 
 Flux distributions from ecModels cannot be directly compared with those from the

@@ -192,14 +192,20 @@ lower bound to -1,000 (for reaction direction, see Step 34):
     bound to a realistic budget; relaxing it back to unconstrained means
     raising that upper bound back to geckopy's wide-open default (1000).
 
-!!! tip "GECKO 4: relaxing and minimizing prot_pool_exchange get simpler"
-    The GECKO 3 negative-flux convention is why relaxing `prot_pool_exchange`
-    means lowering its *lower* bound to -1,000 (Step 40 MATLAB) and why
-    minimizing its usage means *maximizing* with coefficient `+1` rather than
-    minimizing (Step 41 MATLAB, below). Under GECKO 4's forward convention —
-    already how geckopy behaves, per the Python tabs in this section — both
-    become the ordinary operation: relaxing raises the *upper* bound, and
-    minimizing usage is an actual minimize, no sign trick required.
+!!! tip "GECKO 4: relaxing and minimizing prot_pool_exchange already got simpler"
+    The GECKO 3.0 protocol's negative-flux convention is why relaxing
+    `prot_pool_exchange` means lowering its *lower* bound to -1,000 (Step 40
+    MATLAB) and why minimizing its usage means *maximizing* with coefficient
+    `+1` rather than minimizing (Step 41 MATLAB, below) — that's still what
+    those two code blocks show, unchanged since the Nature Protocols
+    publication. Current GECKO has already moved to the forward convention
+    ([PR #419](https://github.com/SysBioChalmers/GECKO/pull/419); see the
+    [Stage 1](stage1-structure-expansion.md#box-1-extension-of-a-conventional-gem)
+    note) — geckopy targets that current behavior, per the Python tabs in
+    this section, where both become the ordinary operation: relaxing raises
+    the *upper* bound, and minimizing usage is an actual minimize, no sign
+    trick required. `flexibilizeEnzConcs` internally made the same switch —
+    it now minimizes the pool with `obj=-1`, since `solveLP` maximizes.
 
 **Step 41.** With neither a protein pool constraint nor a nutrient constraint,
 predict the lowest protein pool usage that still supports the experimental
@@ -509,11 +515,27 @@ of flux:
     sol = pfba(ec_model)
     ```
 
-    geckopy also offers `pfba_enzymes(ec_model)`, which instead minimizes
-    only the L1 norm of `usage_prot_*` fluxes (enzyme usage) rather than all
-    reaction fluxes — useful for the enzyme-usage inspection in
-    [Stage 5](stage5-simulation-analysis.md#enzyme-usage). It is not
-    available for light ecModels.
+!!! tip "GECKO 4: enzyme-aware pFBA (not part of the original protocol)"
+    Both languages also offer a variant that minimizes total *enzyme* usage
+    instead of total flux — the L1 norm of `usage_prot_*` fluxes rather than
+    all reaction fluxes. Not part of the original Nature Protocols
+    procedure; useful for the enzyme-usage inspection in
+    [Stage 5](stage5-simulation-analysis.md#enzyme-usage). Not available for
+    light ecModels (no `usage_prot_*` reactions to minimize).
+
+    === "MATLAB"
+
+        ```matlab
+        sol = pfbaEnzymes(ecModel);
+        ```
+
+    === "Python"
+
+        ```python
+        from geckopy import pfba_enzymes
+
+        sol = pfba_enzymes(ec_model)
+        ```
 
 Inspect the nonzero fluxes:
 

@@ -180,6 +180,15 @@ concentration (for example from proteomics data).
         different UniProt taxonomy or proteome identifier (Step 5) is more
         suitable.
 
+    !!! tip "GECKO 4: KEGG fallback for genes UniProt can't match"
+        Not part of the original protocol: if the KEGG database is also
+        loaded (Step 5-7), `makeEcModel` now consults it for genes that
+        UniProt couldn't match, before giving up on them — `ec.enzymes`
+        gets the UniProt accession carried on the matching KEGG row, or the
+        bare KEGG gene id if that row has no accession of its own (flagged
+        in a separate warning, since a bare KEGG id isn't a standard UniProt
+        accession). This can shrink `noUniprot` without any adapter changes.
+
 === "Python"
 
     Full ecModel (`gecko_light` defaults to `False`):
@@ -198,7 +207,10 @@ concentration (for example from proteomics data).
 
     UniProt data is loaded automatically from `params.path / "data" /
     "uniprot.tsv"`; pass a pre-loaded `uniprot_db=` to use a different file
-    or avoid re-reading it across multiple calls.
+    or avoid re-reading it across multiple calls. Pass a pre-loaded
+    `kegg_db=` for the same KEGG fallback described in the GECKO 4 tip
+    above — `None` (the default) skips it, matching the current MATLAB
+    behavior when no KEGG database is loaded.
 
     !!! warning "Critical step"
         `make_ec_model` returns only the built `EcModel`, not a second
@@ -380,15 +392,23 @@ of which are skipped for light models.
     for example `usage_prot_P00925`.
 12. An exchange reaction for the `prot_pool` pseudo-metabolite is added.
 
-!!! tip "GECKO 4: usage and pool exchange reactions run forward"
-    In GECKO 3 (Steps 11-12 above), both the `usage_prot_*` reactions and the
-    `prot_pool_exchange` reaction carry a *negative* flux (`bounds = (-1000,
-    0)`): protein flows out of `prot_pool` into each enzyme, and out of the
-    model at `prot_pool_exchange`. GECKO 4 flips both to the more intuitive
-    *forward* direction (`bounds = (0, 1000)`): `usage_prot_*` consumes
-    `prot_pool` to produce `prot_<enzyme>`, and `prot_pool_exchange` supplies
-    `prot_pool` in the first place. geckopy already implements the GECKO 4
-    convention. This changes which bound you touch to relax a constraint and
-    which objective coefficient minimizes usage — see the note in
+!!! tip "GECKO 4: usage and pool exchange reactions already run forward"
+    Steps 11-12 above describe the original GECKO 3.0 protocol, where both
+    the `usage_prot_*` reactions and the `prot_pool_exchange` reaction carry
+    a *negative* flux (`bounds = (-1000, 0)`): protein flows out of
+    `prot_pool` into each enzyme, and out of the model at
+    `prot_pool_exchange`. Current GECKO has already flipped both to the more
+    intuitive *forward* direction (`bounds = (0, 1000)`) —
+    [PR #419](https://github.com/SysBioChalmers/GECKO/pull/419):
+    `usage_prot_*` consumes `prot_pool` to produce `prot_<enzyme>`, and
+    `prot_pool_exchange` supplies `prot_pool` in the first place. Every
+    dependent function was updated to match: `setProtPoolSize`,
+    `addNewRxnsToEC`, `getStandardKcat`, `constrainEnzConcs`,
+    `flexibilizeEnzConcs`, `updateProtPool`, `getConcControlCoeffs`,
+    `getSubsetEcModel`, `enzymeUsage`, `reportEnzymeUsage` and
+    `sensitivityTuning`. geckopy implements this same forward convention
+    throughout (it targets current GECKO, not the GECKO 3.0 protocol). This
+    changes which bound you touch to relax a constraint and which objective
+    coefficient minimizes usage — see the note in
     [Stage 3](stage3-model-tuning.md#too-tight-protein-pool-constraint) for
     the worked example.

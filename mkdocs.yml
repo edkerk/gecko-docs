@@ -1,7 +1,8 @@
-site_name: GECKO Toolbox 3.0 Protocol
+site_name: GECKO
 site_description: >-
-  Reconstruction, simulation and analysis of enzyme-constrained metabolic
-  models using GECKO Toolbox 3.0
+  Enzyme-constrained genome-scale metabolic modeling with GECKO: the toolbox,
+  its geckopy Python port, and the GECKO 3.0 Nature Protocols pipeline for
+  reconstruction, simulation and analysis
 site_author: Chen, Gustafsson, Tafur Rangel et al.
 repo_url: https://github.com/SysBioChalmers/GECKO
 repo_name: SysBioChalmers/GECKO

@@ -363,13 +363,38 @@ name, regardless of which predictor produced the second list:
     kcat_list_merged = merge_dlkcat_and_fuzzy_kcats(kcat_list_dlkcat, kcat_list_fuzzy)
     ```
 
-    This is technically a thin wrapper kept for MATLAB-name parity — it calls
-    the more general `merge_kcats(*kcat_lists, source_priority=...)` with the
-    tiered priority `[best BRENDA matches, dlkcat, weaker BRENDA matches]`
-    that matches the MATLAB behavior described below. For anything beyond
-    this two-source case (for example merging in OpenKineticsPredictor
-    results too), call `merge_kcats` directly with an explicit
-    `source_priority`.
+!!! tip "GECKO 4: mergeKcats generalizes to any number of sources"
+    `mergeDLKcatAndFuzzyKcats` / `merge_dlkcat_and_fuzzy_kcats` above are
+    thin two-source convenience wrappers around a more general merge
+    function that both languages now have: `mergeKcats` (MATLAB) /
+    `merge_kcats` (Python), which accept any number of `kcatList`s — for
+    example BRENDA, DLKcat *and* OpenKineticsPredictor results together —
+    with an explicit priority order per source:
+
+    === "MATLAB"
+
+        ```matlab
+        kcatList_merged = mergeKcats({kcatList_fuzzy, kcatList_DLKcat}, ...
+            {'database_top', 'dlkcat', 'database_bottom'});
+        ```
+
+    === "Python"
+
+        ```python
+        from geckopy import merge_kcats
+
+        kcat_list_merged = merge_kcats(
+            kcat_list_fuzzy, kcat_list_dlkcat,
+            source_priority=["database_top", "dlkcat", "database_bottom"],
+        )
+        ```
+
+    `'database_top'` / `'database_bottom'` are reserved tier tokens for
+    strong/weak fuzzy BRENDA matches; any other token (`'dlkcat'`,
+    `'catapro'`, ...) matches a row's own `source` value. A third reserved
+    tier, `'database_exact'`, ranks above both — an exact experimental
+    measurement with no fuzzy wildcarding, as OpenKineticsPredictor can
+    return directly.
 
 During this process, a single $k_{cat}$ is assigned to each reaction, with
 priority given to BRENDA values from a full EC number match. By default,

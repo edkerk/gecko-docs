@@ -297,6 +297,39 @@ The flexibilized enzyme levels are reflected in changed constraints of their
     Only the bounds of selected `usage_prot`/`usage_prot_*` reactions are
     changed to the flexibilized value.
 
+!!! tip "GECKO 4: a greedy shadow-price alternative (not part of the original protocol)"
+    Both languages also offer a second relaxation algorithm alongside
+    `flexibilizeEnzConcs`/`flexibilize_enz_concs`: at each iteration it
+    relaxes whichever still-constrained enzyme has the largest absolute
+    shadow price on its mass-balance constraint (fully, back to the default
+    bound, rather than by a fixed fold-change), and stops as soon as the
+    target growth rate is reached. Not part of the original Nature Protocols
+    procedure — an alternative to try if Step 64's fold-change approach
+    relaxes more enzymes than necessary.
+
+    === "MATLAB"
+
+        ```matlab
+        result = relaxProteomicsGreedy(ecModel, 'minimalGrowth', 0.1);
+        ```
+
+        `result.trace` has one row per relaxation step (`iteration`,
+        `relaxedUniprot`, `growthBefore`, `growthAfter`, `shadowPrice`);
+        `result.relaxed` maps each relaxed enzyme back to its original
+        `ecModel.ec.concs` value so it can be restored later; `result.converged`
+        is true iff `result.finalGrowth >= minimalGrowth`.
+
+    === "Python"
+
+        ```python
+        from geckopy import relax_proteomics_greedy
+
+        result = relax_proteomics_greedy(ec_model, minimal_growth=0.1)
+        ```
+
+        Returns a `GreedyRelaxResult` with the same shape: `.trace`, `.relaxed`,
+        `.final_growth`, `.converged`.
+
 **Step 65.** Inspect which enzymes were modified in `flexEnz`. Flexibilizing
 enzyme concentrations is reasonable because the protein measurement might have
 been imprecise, but it is possible that the $k_{cat}$ should be modified instead.
