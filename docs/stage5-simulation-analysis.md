@@ -155,9 +155,9 @@ rate as the lower bound:
 
 === "Python"
 
-    As in Stage 3, `prot_pool_exchange` runs forward in geckopy, so
-    minimizing it is a plain negative objective coefficient rather than
-    MATLAB's "maximize with +1":
+    cobrapy's dict-form objective takes a coefficient per reaction, so
+    minimizing `prot_pool_exchange` is a negative weight in an otherwise
+    ordinary (maximizing) objective:
 
     ```python
     max_growth = sol.fluxes[params.bio_rxn]
@@ -205,9 +205,8 @@ glucose uptake, then report the top ten highly used enzymes:
 === "Python"
 
     `r_1714` (glucose exchange) follows the ordinary cobrapy exchange-reaction
-    convention (negative = uptake), the same as MATLAB here — unlike
-    `prot_pool_exchange`, there is no direction flip, so maximizing it still
-    minimizes uptake magnitude:
+    convention (negative = uptake), the same as MATLAB, so maximizing it
+    still minimizes uptake magnitude:
 
     ```python
     from cobra.flux_analysis import pfba

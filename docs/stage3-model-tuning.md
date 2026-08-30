@@ -184,27 +184,13 @@ lower bound to -1,000 (for reaction direction, see Step 34):
 
 === "Python"
 
-    !!! warning "prot_pool_exchange runs in the opposite direction — a known GECKO inconsistency, not a design choice"
-        MATLAB GECKO's `prot_pool_exchange` still carries a *negative* flux
-        (protein flows out of the model, `bounds = (-1000, 0)` by default),
-        so relaxing it means lowering the lower bound. The individual
-        `usage_prot_*` reactions were recently swapped in GECKO to run
-        *forward* instead; `prot_pool_exchange` should have been swapped to
-        match at the same time, but wasn't. geckopy implements the corrected,
-        consistent forward convention throughout — both `usage_prot_*` and
-        `prot_pool_exchange` run forward (`bounds = (0, 1000)`), so relaxing
-        `prot_pool_exchange` means raising the upper bound instead of
-        lowering the lower bound.
-
-        This is a real difference between current GECKO (MATLAB, described
-        here) and geckopy today, expected to be resolved by a matching fix in
-        a future GECKO release — not a permanent, intentional divergence.
-        Keep it in mind for every `prot_pool_exchange` / `usage_prot_*` bound
-        or objective coefficient below.
-
     ```python
     ec_model.reactions.prot_pool_exchange.upper_bound = 1000
     ```
+
+    `set_prot_pool_size` (Step 32) narrows `prot_pool_exchange`'s upper
+    bound to a realistic budget; relaxing it back to unconstrained means
+    raising that upper bound back to geckopy's wide-open default (1000).
 
 **Step 41.** With neither a protein pool constraint nor a nutrient constraint,
 predict the lowest protein pool usage that still supports the experimental
@@ -227,10 +213,9 @@ maximum growth rate:
 
 === "Python"
 
-    Because `prot_pool_exchange` runs forward in geckopy, minimizing its
-    usage means minimizing the reaction directly (a plain positive
-    objective, then optimizing in the `min` direction) — the opposite of
-    MATLAB's "maximize with coefficient +1" trick:
+    cobrapy separates the objective reaction from the optimization
+    direction, so minimizing `prot_pool_exchange` usage is a plain positive
+    objective with `objective_direction` set to `"min"`:
 
     ```python
     ec_model.reactions.get_by_id("r_4041").lower_bound = 0.41

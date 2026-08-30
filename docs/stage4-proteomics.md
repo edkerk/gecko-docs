@@ -109,9 +109,7 @@ functions is recommended.
 
 === "Python"
 
-    Written to the upper bound of each `usage_prot_*` reaction, which geckopy
-    runs forward (see the [Stage 3](stage3-model-tuning.md#too-tight-protein-pool-constraint)
-    note on the related `prot_pool_exchange` direction question):
+    Written to the upper bound of each `usage_prot_*` reaction:
 
     ```python
     from geckopy import constrain_enz_concs
@@ -287,10 +285,8 @@ distribution:
     `flex_concs`, `ratio_incr`) — the Python equivalent of `flexEnz`.
 
 The flexibilized enzyme levels are reflected in changed constraints of their
-`usage_prot` reactions (in Python, `usage_prot_*`) — see
-[Stage 3, Step 40](stage3-model-tuning.md#too-tight-protein-pool-constraint)
-for the `prot_pool_exchange` direction question, which is currently unresolved
-between GECKO (MATLAB) and geckopy.
+`usage_prot` reactions (in Python, `usage_prot_*`; see
+[Stage 3, Step 40](stage3-model-tuning.md#too-tight-protein-pool-constraint)).
 
 !!! warning "Critical step"
     The concentrations in `ecModel.ec.concs` remain unchanged and continue to
