@@ -101,7 +101,9 @@ functions is recommended.
 
 === "MATLAB"
 
-    Written to `ecModel.lb`:
+    Written to `ecModel.lb` — GECKO 3's negative-flux `usage_prot_*`
+    convention (see the [Stage 1](stage1-structure-expansion.md#box-1-extension-of-a-conventional-gem)
+    GECKO 4 note):
 
     ```matlab
     ecModel = constrainEnzConcs(ecModel);
@@ -109,9 +111,8 @@ functions is recommended.
 
 === "Python"
 
-    Written to the upper bound of each `usage_prot_*` reaction, which geckopy
-    runs forward (see the [Stage 3](stage3-model-tuning.md#too-tight-protein-pool-constraint)
-    note on the related `prot_pool_exchange` direction question):
+    Written to the upper bound of each `usage_prot_*` reaction — geckopy's
+    forward convention:
 
     ```python
     from geckopy import constrain_enz_concs
@@ -287,16 +288,47 @@ distribution:
     `flex_concs`, `ratio_incr`) — the Python equivalent of `flexEnz`.
 
 The flexibilized enzyme levels are reflected in changed constraints of their
-`usage_prot` reactions (in Python, `usage_prot_*`) — see
-[Stage 3, Step 40](stage3-model-tuning.md#too-tight-protein-pool-constraint)
-for the `prot_pool_exchange` direction question, which is currently unresolved
-between GECKO (MATLAB) and geckopy.
+`usage_prot` reactions (in Python, `usage_prot_*`; see
+[Stage 3, Step 40](stage3-model-tuning.md#too-tight-protein-pool-constraint)).
 
 !!! warning "Critical step"
     The concentrations in `ecModel.ec.concs` remain unchanged and continue to
     reflect the measured values obtained via `fillEnzConcs`/`fill_enz_concs`.
     Only the bounds of selected `usage_prot`/`usage_prot_*` reactions are
     changed to the flexibilized value.
+
+!!! tip "GECKO 4: a greedy shadow-price alternative (not part of the original protocol)"
+    Both languages also offer a second relaxation algorithm alongside
+    `flexibilizeEnzConcs`/`flexibilize_enz_concs`: at each iteration it
+    relaxes whichever still-constrained enzyme has the largest absolute
+    shadow price on its mass-balance constraint (fully, back to the default
+    bound, rather than by a fixed fold-change), and stops as soon as the
+    target growth rate is reached. Not part of the original Nature Protocols
+    procedure — an alternative to try if Step 64's fold-change approach
+    relaxes more enzymes than necessary.
+
+    === "MATLAB"
+
+        ```matlab
+        result = relaxProteomicsGreedy(ecModel, 'minimalGrowth', 0.1);
+        ```
+
+        `result.trace` has one row per relaxation step (`iteration`,
+        `relaxedUniprot`, `growthBefore`, `growthAfter`, `shadowPrice`);
+        `result.relaxed` maps each relaxed enzyme back to its original
+        `ecModel.ec.concs` value so it can be restored later; `result.converged`
+        is true iff `result.finalGrowth >= minimalGrowth`.
+
+    === "Python"
+
+        ```python
+        from geckopy import relax_proteomics_greedy
+
+        result = relax_proteomics_greedy(ec_model, minimal_growth=0.1)
+        ```
+
+        Returns a `GreedyRelaxResult` with the same shape: `.trace`, `.relaxed`,
+        `.final_growth`, `.converged`.
 
 **Step 65.** Inspect which enzymes were modified in `flexEnz`. Flexibilizing
 enzyme concentrations is reasonable because the protein measurement might have

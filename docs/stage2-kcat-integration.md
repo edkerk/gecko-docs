@@ -40,7 +40,9 @@ protein pool is unlimited and the enzyme constraint is therefore not active.
 can be used in any order, but at least one approach must be conducted:
 
 - Fuzzy matching with the [BRENDA database](https://www.brenda-enzymes.org/).
-- Deep learning prediction with DLKcat.
+- Deep learning prediction with DLKcat, run locally via Docker.
+- Prediction via the hosted [OpenKineticsPredictor](https://predictor.openkinetics.org/)
+  service (GECKO 4 — preferred over a local DLKcat; see below).
 - A list of manually curated custom $k_{cat}$ values.
 - Assignment of a standard $k_{cat}$ value.
 
@@ -132,6 +134,18 @@ introduced: for example EC 2.4.2.3 (uridine phosphorylase) becomes 2.4.2.-
 (pentosyltransferase).
 
 ## Deep learning prediction with DLKcat
+
+!!! tip "GECKO 4: prefer OpenKineticsPredictor over a local DLKcat"
+    Steps 20-25 below run DLKcat locally via Docker — the GECKO 3 approach.
+    GECKO 4 instead prefers submitting the same prediction job to the hosted
+    [OpenKineticsPredictor (OKP)](https://predictor.openkinetics.org/)
+    service, which requires no Docker, offers DLKcat itself as one of several
+    selectable methods (CataPro, CatPred, DLKcat, EITLEM, KinForm-H,
+    KinForm-L, UniKP), and defaults to CataPro. See
+    [Kcat prediction with OpenKineticsPredictor](#kcat-prediction-with-openkineticspredictor-gecko-4)
+    below, after Step 25 — it shares Steps 20-21 (SMILES) with DLKcat and
+    produces a `kcatList` in the same shape, so the two are interchangeable
+    from Step 26 onward.
 
 **Step 20.** Gather $k_{cat}$ through deep learning prediction with DLKcat,
 based on enzyme sequence information and substrate structural information in
@@ -253,10 +267,87 @@ in:
     )
     ```
 
+## Kcat prediction with OpenKineticsPredictor (GECKO 4)
+
+[OpenKineticsPredictor (OKP)](https://predictor.openkinetics.org/) is a
+hosted kcat-prediction service that GECKO 4 prefers over running DLKcat
+locally: no Docker install, and a choice of several predictor methods behind
+one API — CataPro (the default), CatPred, DLKcat itself, EITLEM, KinForm-H,
+KinForm-L and UniKP. It shares the same input as DLKcat (protein sequences
+and single-substrate SMILES), so it needs Steps 20-21 (SMILES) above but not
+Steps 22-24 (currency-metabolite lists, writing `DLKcat.tsv`, Docker).
+
+!!! warning "The API key is a secret — never put it in the model adapter"
+    OKP requires a personal Bearer API key (looks like `ak_...`). Get one
+    free, no registration required, at
+    [predictor.openkinetics.org/api-docs](https://predictor.openkinetics.org/api-docs)
+    (the "API key generator" section — the key is shown once; revoke and
+    regenerate from the same page if you lose it). Keys are tied to your IP
+    and carry a daily prediction quota that resets at midnight UTC.
+
+    Because the model adapter is typically shared and committed to version
+    control, do **not** put the key there. Both languages resolve it the same
+    way, checked in this order: an explicit function argument; the
+    `OKP_API_KEY` environment variable; or a plain-text `data/okpApiKey.txt`
+    file in the adapter folder (this filename is already git-ignored by
+    GECKO).
+
+Submit a prediction job for the whole ecModel:
+
+=== "MATLAB"
+
+    ```matlab
+    jobId = submitOpenKineticsPredictor(ecModel);
+    ```
+
+=== "Python"
+
+    ```python
+    from geckopy import submit_open_kinetics_predictor
+
+    job_id = submit_open_kinetics_predictor(ec_model)
+    ```
+
+Both write the request to `data/OKP.csv` and the returned job id to
+`data/OKP_job.txt`, so a later call can find it without passing `jobId`/
+`job_id` explicitly. Pass `method='DLKcat'` (MATLAB) / `method="DLKcat"`
+(Python) to request DLKcat specifically through OKP instead of the CataPro
+default.
+
+Poll until the job finishes and parse the result into a `kcatList`:
+
+=== "MATLAB"
+
+    ```matlab
+    [done, kcatList_OKP] = fetchOpenKineticsPredictor(ecModel, 'wait', true);
+    ```
+
+=== "Python"
+
+    ```python
+    from geckopy import fetch_open_kinetics_predictor
+
+    done, kcat_list_okp = fetch_open_kinetics_predictor(ec_model, wait=True)
+    ```
+
+    `wait=True` polls every 30 seconds (`poll_interval=`) until done or
+    `timeout` (default 1 hour) is reached; with `wait=False` (the default) it
+    checks once and returns immediately, useful for checking on a
+    long-running job from a separate call without blocking.
+
+The downloaded result is cached at `data/OKP_output.csv`; pass `useStored`
+(MATLAB) / `use_stored=True` (Python) to re-parse it without contacting the
+API again. `kcatList_OKP` / `kcat_list_okp` has the same shape as the BRENDA
+and DLKcat kcat lists from Steps 18 and 25 — `selectKcatValue` /
+`apply_kcat_list` and the merge step below accept it identically.
+
 ## Merge DLKcat and BRENDA structures
 
 **Step 26.** If $k_{cat}$ values are gathered from both DLKcat (Step 25) and
-BRENDA (Step 18), merge the two `kcatList` structures to increase coverage:
+BRENDA (Step 18), merge the two `kcatList` structures to increase coverage.
+The same call works with `kcatList_OKP` / `kcat_list_okp` (GECKO 4, above) in
+place of the DLKcat list — the function merges by structure/schema, not by
+name, regardless of which predictor produced the second list:
 
 === "MATLAB"
 
@@ -272,13 +363,38 @@ BRENDA (Step 18), merge the two `kcatList` structures to increase coverage:
     kcat_list_merged = merge_dlkcat_and_fuzzy_kcats(kcat_list_dlkcat, kcat_list_fuzzy)
     ```
 
-    This is technically a thin wrapper kept for MATLAB-name parity — it calls
-    the more general `merge_kcats(*kcat_lists, source_priority=...)` with the
-    tiered priority `[best BRENDA matches, dlkcat, weaker BRENDA matches]`
-    that matches the MATLAB behavior described below. For anything beyond
-    this two-source case (for example merging in OpenKineticsPredictor
-    results too), call `merge_kcats` directly with an explicit
-    `source_priority`.
+!!! tip "GECKO 4: mergeKcats generalizes to any number of sources"
+    `mergeDLKcatAndFuzzyKcats` / `merge_dlkcat_and_fuzzy_kcats` above are
+    thin two-source convenience wrappers around a more general merge
+    function that both languages now have: `mergeKcats` (MATLAB) /
+    `merge_kcats` (Python), which accept any number of `kcatList`s — for
+    example BRENDA, DLKcat *and* OpenKineticsPredictor results together —
+    with an explicit priority order per source:
+
+    === "MATLAB"
+
+        ```matlab
+        kcatList_merged = mergeKcats({kcatList_fuzzy, kcatList_DLKcat}, ...
+            {'database_top', 'dlkcat', 'database_bottom'});
+        ```
+
+    === "Python"
+
+        ```python
+        from geckopy import merge_kcats
+
+        kcat_list_merged = merge_kcats(
+            kcat_list_fuzzy, kcat_list_dlkcat,
+            source_priority=["database_top", "dlkcat", "database_bottom"],
+        )
+        ```
+
+    `'database_top'` / `'database_bottom'` are reserved tier tokens for
+    strong/weak fuzzy BRENDA matches; any other token (`'dlkcat'`,
+    `'catapro'`, ...) matches a row's own `source` value. A third reserved
+    tier, `'database_exact'`, ranks above both — an exact experimental
+    measurement with no fuzzy wildcarding, as OpenKineticsPredictor can
+    return directly.
 
 During this process, a single $k_{cat}$ is assigned to each reaction, with
 priority given to BRENDA values from a full EC number match. By default,

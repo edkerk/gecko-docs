@@ -155,9 +155,9 @@ rate as the lower bound:
 
 === "Python"
 
-    As in Stage 3, `prot_pool_exchange` runs forward in geckopy, so
-    minimizing it is a plain negative objective coefficient rather than
-    MATLAB's "maximize with +1":
+    cobrapy's dict-form objective takes a coefficient per reaction, so
+    minimizing `prot_pool_exchange` is a negative weight in an otherwise
+    ordinary (maximizing) objective:
 
     ```python
     max_growth = sol.fluxes[params.bio_rxn]
@@ -205,9 +205,8 @@ glucose uptake, then report the top ten highly used enzymes:
 === "Python"
 
     `r_1714` (glucose exchange) follows the ordinary cobrapy exchange-reaction
-    convention (negative = uptake), the same as MATLAB here — unlike
-    `prot_pool_exchange`, there is no direction flip, so maximizing it still
-    minimizes uptake magnitude:
+    convention (negative = uptake), the same as MATLAB, so maximizing it
+    still minimizes uptake magnitude:
 
     ```python
     from cobra.flux_analysis import pfba
@@ -227,6 +226,38 @@ glucose uptake, then report the top ten highly used enzymes:
     threshold, not top-N), and `total_usage_flux`. `enzyme_usage` /
     `report_enzyme_usage` are also full-model only (`NotImplementedError` on
     a light ecModel, as in MATLAB).
+
+!!! tip "GECKO 4: rank enzymes by shadow price (not part of the original protocol)"
+    Both languages also offer a more direct bottleneck ranking than
+    absolute usage: it solves the model and ranks enzymes by the absolute
+    shadow price of their mass-balance constraint — how much the objective
+    would improve if that enzyme had more capacity — rather than by how
+    much of it is currently used. Not part of the original Nature Protocols
+    procedure; not available for light ecModels. Interestingly, this one
+    ported in the other direction: it originated in an older, unrelated
+    Python `geckopy` package (Carrasco et al., 2023) and was ported first
+    into current geckopy, then into MATLAB GECKO.
+
+    === "MATLAB"
+
+        ```matlab
+        bottlenecks = getEnzymeBottlenecks(ecModel, 'top', 10);
+        ```
+
+        Returns a table with one row per enzyme: `uniprot`, `gene`,
+        `shadowPrice`, `flux`, `capUsage` and `upperBound`, sorted by
+        descending absolute shadow price.
+
+    === "Python"
+
+        ```python
+        from geckopy import get_enzyme_bottlenecks
+
+        bottlenecks = get_enzyme_bottlenecks(ec_model, top=10)
+        ```
+
+        Returns a pandas DataFrame indexed by uniprot id with columns
+        `gene`, `shadow_price`, `flux`, `cap_usage` and `upper_bound`.
 
 ## Compare flux distributions of different models
 
