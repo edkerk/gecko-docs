@@ -22,69 +22,126 @@ for the detailed 12-step algorithm.
 
 ## Set the default model adapter
 
-**Step 8.** The model adapter is required by many GECKO functions. Instead of
-passing it as an input parameter every time, set a default with the
-`ModelAdapterManager`. This default is then used by all GECKO functions for the
-rest of that MATLAB instance unless another adapter is explicitly given. Here
-the adapter is assumed to be at
-`GECKO/tutorials/full_ecModel/YeastGEMAdapter.m`:
+**Step 8.** The model adapter is required by many GECKO functions.
 
-```matlab
-adapterLocation = fullfile(findGECKOroot, 'tutorials', ...
-    'full_ecModel', 'YeastGEMAdapter.m');
-ModelAdapterManager.setDefault(adapterLocation);
-```
+=== "MATLAB"
 
-If desired, you can use the adapter explicitly as an input parameter, for
-example when simulating multiple ecModels in the same MATLAB instance:
-
-```matlab
-ModelAdapter = ModelAdapterManager.getDefault();
-```
-
-Get a quick reference to the parameters in the model adapter:
-
-```matlab
-params = ModelAdapter.getParameters();
-```
-
-The rest of this protocol assumes a default model adapter is set.
-
-!!! warning "Critical step"
-    If any changes are made to the model adapter after setting it as default,
-    for example editing `YeastGEMAdapter.m`, set it as default again:
+    Instead of passing it as an input parameter every time, set a default with
+    the `ModelAdapterManager`. This default is then used by all GECKO
+    functions for the rest of that MATLAB instance unless another adapter is
+    explicitly given. Here the adapter is assumed to be at
+    `GECKO/tutorials/full_ecModel/YeastGEMAdapter.m`:
 
     ```matlab
+    adapterLocation = fullfile(findGECKOroot, 'tutorials', ...
+        'full_ecModel', 'YeastGEMAdapter.m');
     ModelAdapterManager.setDefault(adapterLocation);
     ```
 
+    If desired, you can use the adapter explicitly as an input parameter, for
+    example when simulating multiple ecModels in the same MATLAB instance:
+
+    ```matlab
+    ModelAdapter = ModelAdapterManager.getDefault();
+    ```
+
+    Get a quick reference to the parameters in the model adapter:
+
+    ```matlab
+    params = ModelAdapter.getParameters();
+    ```
+
+    The rest of this protocol assumes a default model adapter is set.
+
+    !!! warning "Critical step"
+        If any changes are made to the model adapter after setting it as
+        default, for example editing `YeastGEMAdapter.m`, set it as default
+        again:
+
+        ```matlab
+        ModelAdapterManager.setDefault(adapterLocation);
+        ```
+
+=== "Python"
+
+    geckopy has no global default adapter: every function that needs one takes
+    it as an explicit argument (no `ModelAdapterManager` equivalent). Load it
+    once and pass it (or `params`, its `.params` attribute) to each call:
+
+    ```python
+    from pathlib import Path
+    from geckopy import ModelAdapter
+
+    adapter = ModelAdapter.from_folder(Path("GECKO/tutorials/full_ecModel"))
+    params = adapter.params
+    ```
+
+    If the adapter file changes, reload it by calling `from_folder` again;
+    there is no separate "set as default" step to repeat.
+
 ## Load the conventional GEM
 
-**Step 9.** Load the conventional GEM into MATLAB. If its location is specified
-in the model adapter (`obj.params.convGEM`):
+**Step 9.** Load the conventional GEM.
 
-```matlab
-model = loadConventionalGEM();
-```
+=== "MATLAB"
 
-Both YAML and XML files are supported. To load a model at a different location
-or without a model adapter, use the usual RAVEN command for XML files:
+    Load the model into MATLAB. If its location is specified in the model
+    adapter (`obj.params.convGEM`):
 
-```matlab
-model = importModel('path/to/modelFile.xml');
-```
+    ```matlab
+    model = loadConventionalGEM();
+    ```
 
-Or for YAML files:
+    Both YAML and XML files are supported. To load a model at a different
+    location or without a model adapter, use the usual RAVEN command for XML
+    files:
 
-```matlab
-model = readYAMLmodel('path/to/modelFile.yml');
-```
+    ```matlab
+    model = importModel('path/to/modelFile.xml');
+    ```
 
-!!! warning "Critical step"
-    By default, GECKO loads models through RAVEN. If the model is loaded through
-    the COBRA toolbox (recognizable by the `model.rules` field), convert it to
-    the required RAVEN format (recognizable by the `model.metComps` field) with
-    `ravenCobraWrapper()`.
+    Or for YAML files:
+
+    ```matlab
+    model = readYAMLmodel('path/to/modelFile.yml');
+    ```
+
+    !!! warning "Critical step"
+        By default, GECKO loads models through RAVEN. If the model is loaded
+        through the COBRA toolbox (recognizable by the `model.rules` field),
+        convert it to the required RAVEN format (recognizable by the
+        `model.metComps` field) with `ravenCobraWrapper()`.
+
+=== "Python"
+
+    Load the model. If its location is specified in the model adapter
+    (`params.conv_gem`):
+
+    ```python
+    from geckopy import load_conventional_gem
+
+    model = load_conventional_gem(adapter)
+    ```
+
+    This returns a plain `cobra.Model`, so there is no RAVEN/COBRA format
+    distinction to manage: cobrapy is the native format throughout geckopy,
+    and no conversion step is needed. To load a model at a different location
+    or without an adapter, use cobrapy directly:
+
+    ```python
+    import cobra
+
+    model = cobra.io.read_sbml_model("path/to/modelFile.xml")
+    ```
+
+    For a YAML file in RAVEN/GECKO's YAML schema, use raven-toolbox's reader
+    (installed automatically with geckopy):
+
+    ```python
+    from raven_toolbox.io import read_yaml_model
+
+    model = read_yaml_model("path/to/modelFile.yml")
+    ```
 
 ## Choose full or light, then build
 
@@ -94,34 +151,66 @@ not interconvertible. Light ecModels are smaller and faster in simulations, but
 a full ecModel is required to constrain individual enzymes by their
 concentration (for example from proteomics data).
 
-**Step 11.** Run one of the two commands.
+**Step 11.** Build the ecModel.
 
-Full ecModel:
+=== "MATLAB"
 
-```matlab
-[ecModel, noUniprot] = makeEcModel(model);
-```
+    Full ecModel:
 
-Light ecModel:
+    ```matlab
+    [ecModel, noUniprot] = makeEcModel(model);
+    ```
 
-```matlab
-[ecModel, noUniprot] = makeEcModel(model, true);
-```
+    Light ecModel:
 
-The result is an empty ecModel: the model structure (see
+    ```matlab
+    [ecModel, noUniprot] = makeEcModel(model, true);
+    ```
+
+    While running, `makeEcModel` may report a warning about how gene
+    associations are specified in the starting GEM. This warning can be
+    ignored if you are confident the gene associations are correct; it does
+    not prevent creation of an ecModel.
+
+    !!! warning "Critical step"
+        Occasionally not all model genes are found in UniProt. The
+        `noUniprot` cell array contains those model genes without a UniProt
+        match, reported as a warning. If `noUniprot` contains many genes, for
+        example more than ten, it may be worth considering whether a
+        different UniProt taxonomy or proteome identifier (Step 5) is more
+        suitable.
+
+=== "Python"
+
+    Full ecModel (`gecko_light` defaults to `False`):
+
+    ```python
+    from geckopy import make_ec_model
+
+    ec_model = make_ec_model(model, adapter)
+    ```
+
+    Light ecModel:
+
+    ```python
+    ec_model = make_ec_model(model, adapter, gecko_light=True)
+    ```
+
+    UniProt data is loaded automatically from `params.path / "data" /
+    "uniprot.tsv"`; pass a pre-loaded `uniprot_db=` to use a different file
+    or avoid re-reading it across multiple calls.
+
+    !!! warning "Critical step"
+        `make_ec_model` returns only the built `EcModel`, not a second
+        `noUniprot`-style list. Unmatched genes are instead logged as a
+        warning summary and recorded on the affected reactions themselves,
+        in `reaction.notes["geckopy_warning"]`. As in MATLAB, if many genes
+        are unmatched it is worth reconsidering the UniProt taxonomy or
+        proteome identifier (Step 5).
+
+The result is an empty ecModel either way: the model structure (see
 [the ecModel.ec structure](stage2-kcat-integration.md#the-ecmodelec-structure))
 is changed to allow enzyme constraints, but no constraints are applied yet.
-While running, `makeEcModel` may report a warning about how gene associations
-are specified in the starting GEM. This warning can be ignored if you are
-confident the gene associations are correct; it does not prevent creation of an
-ecModel.
-
-!!! warning "Critical step"
-    Occasionally not all model genes are found in UniProt. The `noUniprot` cell
-    array contains those model genes without a UniProt match, reported as a
-    warning. If `noUniprot` contains many genes, for example more than ten, it
-    may be worth considering whether a different UniProt taxonomy or proteome
-    identifier (Step 5) is more suitable.
 
 ## Apply enzyme complex stoichiometry (optional)
 
@@ -133,15 +222,37 @@ the taxonomic identifier in `obj.params.complex.taxonomicID`. The Complex Portal
 has only a limited number of allowed taxonomic identifiers. Download and apply
 the data:
 
-```matlab
-complexInfo = getComplexData();
-[ecModel, foundComplex, proposedComplex] = ...
-    applyComplexData(ecModel, complexInfo);
-```
+=== "MATLAB"
 
-Note that `getComplexData` requires no input parameters; the required
-parameters are gathered from the default model adapter. This behavior is shared
-by several other GECKO functions.
+    ```matlab
+    complexInfo = getComplexData();
+    [ecModel, foundComplex, proposedComplex] = ...
+        applyComplexData(ecModel, complexInfo);
+    ```
+
+    Note that `getComplexData` requires no input parameters; the required
+    parameters are gathered from the default model adapter. This behavior is
+    shared by several other GECKO functions.
+
+=== "Python"
+
+    ```python
+    from geckopy import apply_complex_data
+
+    apply_complex_data(ec_model, path=params.path / "data" / "ComplexPortal.json")
+    ```
+
+    `apply_complex_data` mutates `ec_model` in place (no `foundComplex` /
+    `proposedComplex` return values yet). To (re)download the Complex Portal
+    data first, use `get_complex_data`, which does take the adapter
+    explicitly (Python functions generally take the adapter or its
+    parameters as an argument rather than reading a global default):
+
+    ```python
+    from geckopy import get_complex_data
+
+    get_complex_data(adapter)
+    ```
 
 !!! warning "Critical step"
     If Step 12 is omitted, or if information is missing for a particular
@@ -165,31 +276,62 @@ appropriate. This may require additional literature study.
 
 **Step 14.** Save the ecModel to disk; this can be done at any point in the
 procedure. To retain all ecModel content, including the `ecModel.ec` fields,
-store it in YAML format. `saveEcModel` does this automatically in the adapter
-folder, while the more generic `writeYAMLmodel` can store the file anywhere. To
-load the model back into MATLAB, use `loadEcModel` or the generic
-`readYAMLmodel`:
+store it in YAML format.
 
-```matlab
-saveEcModel(ecModel, 'ecModel.yml');
-writeYAMLmodel(ecModel, 'C:\path\to\ecModel.yml');
-ecModel = loadEcModel('ecModel.yml');
-ecModel = readYAMLmodel('C:\path\to\ecModel.yml');
-```
+=== "MATLAB"
 
-To enable constraint-based analysis in other software packages, it may be more
-suitable to exchange the model in SBML format (with an XML extension). Use
-`exportModel` and `importModel`, but be aware that this file does not retain the
-`ecModel.ec` fields:
+    `saveEcModel` does this automatically in the adapter folder, while the
+    more generic `writeYAMLmodel` can store the file anywhere. To load the
+    model back into MATLAB, use `loadEcModel` or the generic `readYAMLmodel`:
 
-```matlab
-exportModel(ecModel, 'C:\path\to\ecModelFull.xml');
-ecModel = importModel('C:\path\to\ecModelFull.xml');
-```
+    ```matlab
+    saveEcModel(ecModel, 'ecModel.yml');
+    writeYAMLmodel(ecModel, 'C:\path\to\ecModel.yml');
+    ecModel = loadEcModel('ecModel.yml');
+    ecModel = readYAMLmodel('C:\path\to\ecModel.yml');
+    ```
+
+    To enable constraint-based analysis in other software packages, it may be
+    more suitable to exchange the model in SBML format (with an XML
+    extension). Use `exportModel` and `importModel`, but be aware that this
+    file does not retain the `ecModel.ec` fields:
+
+    ```matlab
+    exportModel(ecModel, 'C:\path\to\ecModelFull.xml');
+    ecModel = importModel('C:\path\to\ecModelFull.xml');
+    ```
+
+=== "Python"
+
+    `save_ec_model` writes YAML, either in the adapter folder or at an
+    arbitrary path; `load_ec_model` reads it back:
+
+    ```python
+    from geckopy import load_ec_model, save_ec_model
+
+    save_ec_model(ec_model, "ecModel.yml", adapter=adapter)
+    save_ec_model(ec_model, r"C:\path\to\ecModel.yml")
+    ec_model = load_ec_model("ecModel.yml", adapter=adapter)
+    ec_model = load_ec_model(r"C:\path\to\ecModel.yml")
+    ```
+
+    geckopy does not provide a separate SBML export for ecModels — YAML is the
+    only format that round-trips the `ec` fields. Since `ec_model` is a
+    `cobra.Model`, plain cobrapy SBML I/O still works for interoperating with
+    other tools, with the same caveat as MATLAB's `exportModel`: the `ec`
+    fields are not retained.
+
+    ```python
+    import cobra
+
+    cobra.io.write_sbml_model(ec_model, r"C:\path\to\ecModelFull.xml")
+    model = cobra.io.read_sbml_model(r"C:\path\to\ecModelFull.xml")
+    ```
 
 !!! warning "Critical step"
-    Only the YAML format contains the `ecModel.ec` fields that are required to
-    make modifications on the enzyme constraints of the ecModel.
+    Only the YAML format contains the `ecModel.ec` fields (`ec_model.ec` in
+    Python) that are required to make modifications on the enzyme constraints
+    of the ecModel.
 
 ## Box 1: Extension of a conventional GEM
 
@@ -219,12 +361,14 @@ of which are skipped for light models.
    yields `r_0001_REV_EXP_1` and `r_0001_REV_EXP_2`. For light ecModels the
    identifiers remain unchanged.
 6. An empty `ecModel.ec` structure is constructed, to be populated with enzymes,
-   kcat values and reaction-enzyme associations.
+   kcat values and reaction-enzyme associations. (Python: `ec_model.ec`, an
+   `EcData` instance with the same fields under snake_case names — see
+   [the ecModel.ec structure](stage2-kcat-integration.md#the-ecmodelec-structure).)
 7. Enzyme details such as MW and amino acid sequence are added to `ecModel.ec`,
    gathered from UniProt using the UniProt parameters in the model adapter.
-8. `ecModel.ec.rxnEnzMat` indicates which reactions are catalyzed by which
-   enzymes, momentarily by a 1, which can later be modified to reflect different
-   numbers of subunits in a complex.
+8. `ecModel.ec.rxnEnzMat` (Python: `ec_model.ec.rxn_enz_mat`) indicates which
+   reactions are catalyzed by which enzymes, momentarily by a 1, which can
+   later be modified to reflect different numbers of subunits in a complex.
 9. *(Skipped for light ecModels)* Enzymes are added as pseudo-metabolites and
    appear in `ecModel.mets` with the prefix `prot_` followed by the protein
    identifier. For instance, *S. cerevisiae* enolase gene YHR174W with UniProt

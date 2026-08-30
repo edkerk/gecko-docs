@@ -58,24 +58,32 @@ plugins:
 
 theme:
   name: material
+  logo: assets/gecko-icon-white.png
+  favicon: assets/gecko-icon-green.png
   features:
+    - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.sections
     - navigation.top
     - navigation.tracking
+    - navigation.footer
     - content.code.copy
+    - content.tabs.link
     - toc.follow
     - search.suggest
     - search.highlight
+    - search.share
   palette:
+    # Brand colours (GECKO green) are defined in docs/stylesheets/extra.css.
     - scheme: default
-      primary: teal
-      accent: teal
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
     - scheme: slate
-      primary: teal
-      accent: teal
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
@@ -94,8 +102,18 @@ markdown_extensions:
   - toc:
       permalink: true
   - attr_list
+  - md_in_html
   - pymdownx.tabbed:
       alternate_style: true
+  # Renders Material icon/emoji shortcodes (e.g. :material-api:) as inline SVG
+  # instead of literal text. material.extensions.emoji is the path for
+  # mkdocs-material >= 9 (see requirements.txt).
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+extra_css:
+  - stylesheets/extra.css
 
 extra_javascript:
   - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
