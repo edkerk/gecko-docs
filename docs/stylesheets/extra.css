@@ -1,9 +1,12 @@
-/* ===== GECKO brand palette (green) ===================================== */
+/* ===== GECKO brand palette (green) =====================================
+   Sourced from GECKO.png on the update-gecko-logo branch -- a flat single-
+   tone gecko icon + wordmark, RGB(67,104,75). Shades below are HSL
+   adjustments of that exact color (same hue), not eyeballed. */
 :root {
-  --gecko-green:       #015B1F;
-  --gecko-green-dark:  #013B14;
-  --gecko-green-light: #0C7A30;
-  --gecko-accent:      #2E8B4E;
+  --gecko-green:       #43684B;
+  --gecko-green-dark:  #273D2C;
+  --gecko-green-light: #5F936A;
+  --gecko-accent:      #2D6E3B;
 }
 
 [data-md-color-scheme="default"] {
@@ -29,8 +32,8 @@
   --md-primary-fg-color:        var(--gecko-green);
   --md-primary-bg-color:        #ffffff;
   --md-primary-bg-color--light: rgba(255, 255, 255, 0.75);
-  --md-accent-fg-color:         #5fd889;
-  --md-typeset-a-color:         #5fd889;
+  --md-accent-fg-color:         #87d398;
+  --md-typeset-a-color:         #87d398;
 }
 
 /* ===== Feature cards (Material grid cards) ============================ */
@@ -61,7 +64,7 @@
   display: inline-block; font-size: .7rem; font-weight: 700;
   letter-spacing: .07em; text-transform: uppercase;
   color: var(--gecko-green);
-  background: rgba(1,91,31,.1);
+  background: rgba(67,104,75,.12);
   border-radius: 20px; padding: .2rem .75rem; margin-bottom: .6rem;
 }
 .gd-hero h1 { font-size: 1.9rem; line-height: 1.25; margin-bottom: .5rem; }
