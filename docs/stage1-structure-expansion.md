@@ -379,3 +379,16 @@ of which are skipped for light models.
     Their identifiers are `usage_` followed by the enzyme metabolite identifier,
     for example `usage_prot_P00925`.
 12. An exchange reaction for the `prot_pool` pseudo-metabolite is added.
+
+!!! tip "GECKO 4: usage and pool exchange reactions run forward"
+    In GECKO 3 (Steps 11-12 above), both the `usage_prot_*` reactions and the
+    `prot_pool_exchange` reaction carry a *negative* flux (`bounds = (-1000,
+    0)`): protein flows out of `prot_pool` into each enzyme, and out of the
+    model at `prot_pool_exchange`. GECKO 4 flips both to the more intuitive
+    *forward* direction (`bounds = (0, 1000)`): `usage_prot_*` consumes
+    `prot_pool` to produce `prot_<enzyme>`, and `prot_pool_exchange` supplies
+    `prot_pool` in the first place. geckopy already implements the GECKO 4
+    convention. This changes which bound you touch to relax a constraint and
+    which objective coefficient minimizes usage — see the note in
+    [Stage 3](stage3-model-tuning.md#too-tight-protein-pool-constraint) for
+    the worked example.

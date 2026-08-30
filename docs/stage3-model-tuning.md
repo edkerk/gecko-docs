@@ -192,6 +192,15 @@ lower bound to -1,000 (for reaction direction, see Step 34):
     bound to a realistic budget; relaxing it back to unconstrained means
     raising that upper bound back to geckopy's wide-open default (1000).
 
+!!! tip "GECKO 4: relaxing and minimizing prot_pool_exchange get simpler"
+    The GECKO 3 negative-flux convention is why relaxing `prot_pool_exchange`
+    means lowering its *lower* bound to -1,000 (Step 40 MATLAB) and why
+    minimizing its usage means *maximizing* with coefficient `+1` rather than
+    minimizing (Step 41 MATLAB, below). Under GECKO 4's forward convention —
+    already how geckopy behaves, per the Python tabs in this section — both
+    become the ordinary operation: relaxing raises the *upper* bound, and
+    minimizing usage is an actual minimize, no sign trick required.
+
 **Step 41.** With neither a protein pool constraint nor a nutrient constraint,
 predict the lowest protein pool usage that still supports the experimental
 maximum growth rate:

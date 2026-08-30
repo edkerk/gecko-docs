@@ -111,6 +111,17 @@ learning-predicted enzyme kinetics through DLKcat, which makes it possible to
 build ecModels for virtually any organism or cell line even in the absence of
 experimental data.
 
+!!! tip "GECKO 4 is in development"
+    This protocol documents **GECKO 3.0** — the numbered stages and steps
+    follow the published Nature Protocols pipeline (`protocol.m`) exactly.
+    GECKO development is now moving towards **GECKO 4.0**, which changes a
+    few things: the direction convention of the protein pool and enzyme
+    usage reactions, and a preference for the OpenKineticsPredictor (OKP)
+    service over a locally-run DLKcat for kcat prediction. geckopy already
+    targets GECKO 4 behavior. Pages below flag GECKO 4-specific changes with
+    a box like this one, alongside the GECKO 3 steps they'll eventually
+    replace.
+
 ## How the protocol is organized
 
 The procedure has a preparation stage followed by five stages. The first four

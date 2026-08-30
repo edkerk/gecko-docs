@@ -101,7 +101,9 @@ functions is recommended.
 
 === "MATLAB"
 
-    Written to `ecModel.lb`:
+    Written to `ecModel.lb` — GECKO 3's negative-flux `usage_prot_*`
+    convention (see the [Stage 1](stage1-structure-expansion.md#box-1-extension-of-a-conventional-gem)
+    GECKO 4 note):
 
     ```matlab
     ecModel = constrainEnzConcs(ecModel);
@@ -109,7 +111,8 @@ functions is recommended.
 
 === "Python"
 
-    Written to the upper bound of each `usage_prot_*` reaction:
+    Written to the upper bound of each `usage_prot_*` reaction — geckopy's
+    forward convention:
 
     ```python
     from geckopy import constrain_enz_concs
