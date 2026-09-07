@@ -40,16 +40,22 @@ plugins:
             show_signature_annotations: true
         # MATLAB API (GECKO) -- pure-Python tree-sitter collection, no MATLAB
         # runtime required. Functions are referenced by their file path
-        # relative to this config (e.g. ::: ./GECKO/src/geckomat/.../foo.m).
+        # relative to this config (e.g. ::: ./GECKO/src/.../foo.m). Paths are
+        # top-level src/ categories, not src/geckomat/* -- GECKO dropped the
+        # geckomat nesting level and split utilities into several categories
+        # (see scripts/gen_api_pages.py's MATLAB_CATEGORIES, kept in sync).
         matlab:
           paths:
-            - GECKO/src/geckomat/change_model
-            - GECKO/src/geckomat/gather_kcats
-            - GECKO/src/geckomat/get_enzyme_data
-            - GECKO/src/geckomat/kcat_sensitivity_analysis
-            - GECKO/src/geckomat/limit_proteins
-            - GECKO/src/geckomat/model_adapter
-            - GECKO/src/geckomat/utilities
+            - GECKO/src/change_model
+            - GECKO/src/download_databases
+            - GECKO/src/enzyme_usage
+            - GECKO/src/flux_analysis
+            - GECKO/src/gather_kcats
+            - GECKO/src/get_enzyme_data
+            - GECKO/src/kcat_sensitivity_analysis
+            - GECKO/src/limit_proteins
+            - GECKO/src/model_adapter
+            - GECKO/src/utilities
           paths_recursive: true
           options:
             docstring_style: numpy
