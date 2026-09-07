@@ -27,14 +27,21 @@ from pathlib import Path
 import mkdocs_gen_files
 
 ROOT = Path(__file__).resolve().parent.parent
-GECKO_MAT = ROOT / "GECKO" / "src" / "geckomat"
+GECKO_MAT = ROOT / "GECKO" / "src"
 PYPKG = ROOT / "geckopy" / "src" / "geckopy"
 
-# GECKO geckomat subfolders to document, in nav order: (folder, page title).
-# Pruned to existing folders at build time by scripts/build_hooks.py / the
-# matlab handler.
+# GECKO src subfolders to document, in nav order: (folder, page title). GECKO
+# dropped the src/geckomat nesting level and split what used to be a single
+# "utilities" catch-all into several categories. Pruned to existing folders
+# at build time by scripts/build_hooks.py / the matlab handler. "deprecated"
+# (backward-compat aliases, e.g. selectKcatValue -> assignKcatValues) and
+# "dlkcat-gecko" (the Python/Docker DLKcat runner, not MATLAB) are
+# intentionally excluded.
 MATLAB_CATEGORIES = [
     ("change_model", "Build & edit ecModel"),
+    ("download_databases", "Download databases"),
+    ("enzyme_usage", "Enzyme usage"),
+    ("flux_analysis", "Flux analysis"),
     ("gather_kcats", "Gather kcats"),
     ("get_enzyme_data", "Enzyme & EC data"),
     ("kcat_sensitivity_analysis", "kcat sensitivity tuning"),
