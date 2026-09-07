@@ -123,6 +123,7 @@ nav:
   - Home: index.md
   - Introduction: introduction.md
   - Materials and installation: installation.md
+  - Upgrading from GECKO 3: migration.md
   - Procedure:
       - Stage 0 - Preparation: stage0-preparation.md
       - Stage 1 - Structure expansion: stage1-structure-expansion.md

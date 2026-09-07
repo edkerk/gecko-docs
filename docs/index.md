@@ -127,7 +127,9 @@ experimental data.
     part of the original protocol at all. geckopy, being newer, targets this
     current behavior directly rather than the original GECKO 3.0 protocol.
     Pages below flag each of these with a box like this one, alongside the
-    GECKO 3.0 protocol steps they sit next to.
+    GECKO 3.0 protocol steps they sit next to. See
+    [Upgrading from GECKO 3](migration.md) for the full list of changes and
+    how to stay on GECKO 3 if needed.
 
 ## How the protocol is organized
 
