@@ -1,4 +1,4 @@
-# Read the Docs configuration file for the GECKO 3.0 protocol
+# Read the Docs configuration file for the GECKO documentation
 # See https://docs.readthedocs.io/en/stable/config-file/v2.html
 
 version: 2
@@ -14,9 +14,9 @@ build:
   tools:
     python: "3.12"
 
-mkdocs:
-  configuration: mkdocs.yml
+sphinx:
+  configuration: docs/conf.py
 
 python:
   install:
-    - requirements: requirements.txt
+    - requirements: requirements-sphinx.txt

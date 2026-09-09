@@ -1,23 +1,23 @@
-# References
+# Citations
 
-This page reproduces the reference list of the original protocol.
+## GECKO
 
-## Primary citation
+> Chen, Y., Gustafsson, J., Tafur Rangel, A., Anton, M., Domenzain, I.,
+> Kittikunapong, C., Li, F., Yuan, L., Nielsen, J. & Kerkhoven, E. J. (2024).
+> **Reconstruction, simulation and analysis of enzyme-constrained metabolic
+> models using GECKO Toolbox 3.0.** *Nature Protocols* 19: 629-667.
+> <https://doi.org/10.1038/s41596-023-00931-7>
 
-Chen, Y., Gustafsson, J., Tafur Rangel, A., Anton, M., Domenzain, I.,
-Kittikunapong, C., Li, F., Yuan, L., Nielsen, J. & Kerkhoven, E. J.
-*Reconstruction, simulation and analysis of enzyme-constrained metabolic models
-using GECKO Toolbox 3.0.* Nature Protocols **19**, 629-667 (2024).
-[https://doi.org/10.1038/s41596-023-00931-7](https://doi.org/10.1038/s41596-023-00931-7)
+## Key papers using this protocol
 
-## Key references using this protocol
+> Domenzain, I. et al. (2022). *Nature Communications* 13: 3766.
+> <https://doi.org/10.1038/s41467-022-31421-1>
 
-- Domenzain, I. et al. Nat. Commun. **13**, 3766 (2022):
-  [https://doi.org/10.1038/s41467-022-31421-1](https://doi.org/10.1038/s41467-022-31421-1)
-- Li, F. et al. Nat. Catal. **5**, 662-672 (2022):
-  [https://doi.org/10.1038/s41929-022-00798-z](https://doi.org/10.1038/s41929-022-00798-z)
-- Sanchez, B. J. et al. Mol. Syst. Biol. **13**, 935 (2017):
-  [https://doi.org/10.15252/msb.20167411](https://doi.org/10.15252/msb.20167411)
+> Li, F. et al. (2022). *Nature Catalysis* 5: 662-672.
+> <https://doi.org/10.1038/s41929-022-00798-z>
+
+> Sanchez, B. J. et al. (2017). *Molecular Systems Biology* 13: 935.
+> <https://doi.org/10.15252/msb.20167411>
 
 ## Full reference list
 

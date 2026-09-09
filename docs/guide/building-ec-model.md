@@ -1,0 +1,453 @@
+# Building an empty ecModel
+
+Building an ecModel expands a conventional GEM so enzyme constraints can be
+added to it later. Reversible reactions split into forward and backward
+copies, because enzyme kinetics depend on direction; reactions catalyzed by
+isozymes split into one reaction per isozyme, because each has a different
+kinetics and molecular weight; and the protein pool, together with enzyme
+pseudo-metabolites that draw from it, is added to the network. The result
+is an **empty ecModel**: enzyme constraints are not yet applied, only the
+structure that will carry them.
+
+This page assumes a project and model adapter already exist; see
+[Getting started](getting-started.md).
+
+## Functions on this page
+
+| MATLAB | Python | |
+|---|---|---|
+| `ModelAdapterManager.setDefault` | *(explicit argument instead)* | make an adapter the default for the session |
+| `loadConventionalGEM` | `load_conventional_gem` | load the starting GEM from the path in the adapter |
+| `makeEcModel` | `make_ec_model` | build the empty ecModel, full or light |
+| `getComplexData` / `applyComplexData` | `get_complex_data` / `apply_complex_data` | add enzyme complex subunit stoichiometry |
+| `saveEcModel` / `loadEcModel` | `save_ec_model` / `load_ec_model` | round-trip the ecModel through YAML |
+
+## Set the default model adapter
+
+Most GECKO functions need the model adapter.
+
+::::{tab-set}
+:::{tab-item} Ⓜ️ MATLAB
+:sync: matlab
+
+Set a default with `ModelAdapterManager` instead of passing it to every
+call. The default then applies to every GECKO function for the rest of
+that MATLAB session, unless another adapter is given explicitly:
+
+```matlab
+adapterLocation = fullfile(findGECKOroot, 'tutorials', ...
+    'full_ecModel', 'YeastGEMAdapter.m');
+ModelAdapterManager.setDefault(adapterLocation);
+```
+
+Retrieve the default explicitly when needed, for example when simulating
+several ecModels in the same session:
+
+```matlab
+ModelAdapter = ModelAdapterManager.getDefault();
+params = ModelAdapter.getParameters();
+```
+
+The rest of this guide assumes a default model adapter is set.
+
+**Reset the default after editing the adapter.** If the model adapter file
+changes, for example after editing `YeastGEMAdapter.m`, set it as default
+again:
+
+```matlab
+ModelAdapterManager.setDefault(adapterLocation);
+```
+:::
+:::{tab-item} 🐍 Python
+:sync: python
+
+geckopy has no global default adapter: every function that needs one takes
+it as an explicit argument. Load it once and pass it, or its `.params`
+attribute, to each call:
+
+```python
+from pathlib import Path
+from geckopy import ModelAdapter
+
+adapter = ModelAdapter.from_folder(Path("GECKO/tutorials/full_ecModel"))
+params = adapter.params
+```
+
+If the adapter file changes, reload it by calling `from_folder` again;
+there is no separate "set as default" step to repeat.
+:::
+::::
+
+## Load the conventional GEM
+
+::::{tab-set}
+:::{tab-item} Ⓜ️ MATLAB
+:sync: matlab
+
+If the model's location is set in the adapter (`obj.params.convGEM`):
+
+```matlab
+model = loadConventionalGEM();
+```
+
+Both YAML and XML files are supported. To load a model at a different
+location, or without a model adapter, use the RAVEN function directly, for
+XML:
+
+```matlab
+model = importModel('path/to/modelFile.xml');
+```
+
+or YAML:
+
+```matlab
+model = readYAMLmodel('path/to/modelFile.yml');
+```
+
+**Convert from the COBRA Toolbox format if needed.** GECKO loads models
+through RAVEN by default. A model loaded through the COBRA Toolbox
+(recognizable by a `model.rules` field) needs converting to the RAVEN
+format (recognizable by a `model.metComps` field) first, with
+`ravenCobraWrapper()`.
+
+**Warnings when the model loads.** Not every GEM in SBML format strictly
+follows the L3V1 FBCv2 standard; the
+[SBML Validator](https://synonym.caltech.edu/validator_servlet/) reports
+what is wrong. In most cases the model still loads despite the warning. If
+it is later exported to SBML again, RAVEN avoids re-writing the same
+invalid content, so cycling through `importModel`, `exportModel` and
+`importModel` brings the loaded GEM closer to valid SBML.
+:::
+:::{tab-item} 🐍 Python
+:sync: python
+
+If the model's location is set in the adapter (`params.conv_gem`):
+
+```python
+from geckopy import load_conventional_gem
+
+model = load_conventional_gem(adapter)
+```
+
+This returns a plain `cobra.Model`. There is no RAVEN/COBRA format
+distinction to manage: cobrapy is the native format throughout geckopy, so
+no conversion step is needed. To load a model at a different location or
+without an adapter, use cobrapy directly:
+
+```python
+import cobra
+
+model = cobra.io.read_sbml_model("path/to/modelFile.xml")
+```
+
+or, for a YAML file in the RAVEN/GECKO schema, raven-toolbox's reader
+(installed automatically with geckopy):
+
+```python
+from raven_toolbox.io import read_yaml_model
+
+model = read_yaml_model("path/to/modelFile.yml")
+```
+:::
+::::
+
+## Choose full or light, then build
+
+A full ecModel expands isozymes into separate reactions and adds each
+enzyme as its own pseudo-metabolite, which lets it be constrained
+individually, for example from proteomics data. A light ecModel skips both:
+it keeps only the lowest-cost isozyme per reaction and folds the protein
+pool directly into enzymatic reactions, which makes it smaller and faster
+to simulate. The two are not interconvertible, and the choice affects
+everything downstream of this page. See
+[GECKO light vs. full ecModels](gecko-light.md) for the tradeoffs.
+
+::::{tab-set}
+:::{tab-item} Ⓜ️ MATLAB
+:sync: matlab
+
+Full ecModel:
+
+```matlab
+[ecModel, noUniprot] = makeEcModel(model);
+```
+
+Light ecModel:
+
+```matlab
+[ecModel, noUniprot] = makeEcModel(model, true);
+```
+
+`makeEcModel` may warn about how gene associations are specified in the
+starting GEM. The warning does not prevent creation of the ecModel, and can
+be ignored once the gene associations are confirmed correct.
+
+**Genes without a UniProt match.** `noUniprot` lists model genes with no
+UniProt match. If it contains many genes, for example more than ten,
+reconsider whether a different UniProt taxonomy or proteome identifier
+(see [Getting started](getting-started.md#querying-uniprot-and-kegg)) fits
+better.
+
+**GECKO 4: a KEGG fallback for genes UniProt cannot match.** Not part of
+the original protocol: when a KEGG database is also loaded, `makeEcModel`
+now consults it for genes that UniProt could not match, before giving up
+on them. `ec.enzymes` receives the UniProt accession carried on the
+matching KEGG row, or the bare KEGG gene id if that row has no accession
+of its own (flagged in a separate warning, since a bare KEGG id is not a
+standard UniProt accession). This can shrink `noUniprot` without any
+adapter changes.
+:::
+:::{tab-item} 🐍 Python
+:sync: python
+
+Full ecModel (`gecko_light` defaults to `False`):
+
+```python
+from geckopy import make_ec_model
+
+ec_model = make_ec_model(model, adapter)
+```
+
+Light ecModel:
+
+```python
+ec_model = make_ec_model(model, adapter, gecko_light=True)
+```
+
+UniProt data loads automatically from `params.path / "data" /
+"uniprot.tsv"`. Pass a pre-loaded `uniprot_db=` to use a different file or
+to avoid re-reading it across multiple calls. Pass a pre-loaded `kegg_db=`
+for the same KEGG fallback described in the GECKO 4 note above; `None`
+(the default) skips it, matching MATLAB's behavior when no KEGG database
+is loaded.
+
+**Genes without a UniProt match.** `make_ec_model` returns only the built
+`EcModel`, not a second `noUniprot`-style list. Unmatched genes are logged
+as a warning summary and recorded on the affected reactions themselves, in
+`reaction.notes["geckopy_warning"]`. As in MATLAB, many unmatched genes are
+a reason to reconsider the UniProt taxonomy or proteome identifier.
+:::
+::::
+
+The result is an empty ecModel either way: the model structure changes to
+allow enzyme constraints (see
+[the ecModel.ec structure](applying-kcats.md#the-ecmodelec-structure)), but
+no constraints are applied yet.
+
+## Apply enzyme complex stoichiometry (optional)
+
+Building the ecModel assigns single-subunit stoichiometry to every enzyme
+complex in `ecModel.ec.rxnEnzMat`. In reality subunit copy numbers vary.
+GECKO can add this information from the
+[Complex Portal](https://www.ebi.ac.uk/complexportal/complex/organisms),
+using the taxonomic identifier in `obj.params.complex.taxonomicID`; the
+Complex Portal covers only a limited set of taxonomic identifiers.
+
+::::{tab-set}
+:::{tab-item} Ⓜ️ MATLAB
+:sync: matlab
+
+```matlab
+complexInfo = getComplexData();
+[ecModel, foundComplex, proposedComplex] = ...
+    applyComplexData(ecModel, complexInfo);
+```
+
+`getComplexData` takes no input parameters; the required parameters come
+from the default model adapter, a pattern shared by several other GECKO
+functions.
+:::
+:::{tab-item} 🐍 Python
+:sync: python
+
+```python
+from geckopy import apply_complex_data
+
+apply_complex_data(ec_model, path=params.path / "data" / "ComplexPortal.json")
+```
+
+`apply_complex_data` mutates `ec_model` in place; there are no
+`foundComplex`/`proposedComplex` return values yet. To (re)download the
+Complex Portal data first, use `get_complex_data`, which takes the adapter
+explicitly, since Python functions generally take the adapter or its
+parameters as an argument rather than reading a global default:
+
+```python
+from geckopy import get_complex_data
+
+get_complex_data(adapter)
+```
+:::
+::::
+
+`applyComplexData` integrates complex data for a reaction only when its
+ecModel gene association fully (100%) matches a Complex Portal complex. If
+no full match exists, `proposedComplex` suggests complexes with a partial
+match: either at least 75% of the reaction's ecModel genes match a Complex
+Portal complex, or a Complex Portal complex contains more subunits than the
+genes associated with the reaction. Inspect `proposedComplex` and consider
+whether curating the ecModel gene association is appropriate; this may
+need further literature study.
+
+:::{note} Example output
+In the `full_ecModel` tutorial, applying Complex Portal data reports:
+
+```
+A total of 206 complex have full match, and 17 proposed.
+```
+
+One proposed match: reaction `r_0505_EXP_2` could match complex CPX-1293,
+the mitochondrial 2-oxoglutarate dehydrogenase complex. In the ecModel this
+reaction is annotated with proteins P20967 (KGD1, subunit E1), P19262
+(KGD2, subunit E2) and P09624 (LPD1, subunit E3), while CPX-1293 also
+includes P19955 (YMR31), the 37S ribosomal protein. Literature confirms
+that P19955, also called KGD4 or subunit E4, is an essential subunit for a
+stable complex, so the starting GEM's gene association for reaction
+`r_0505` could be curated to include it, which would give a full match.
+:::
+
+:::{note} Complex data is missing for some or all complexes
+The Complex Portal does not contain every complex; some are missing in
+most organisms. Complex information is not critical for GECKO, since
+uncertainty in kcat values is a larger source of error than uncertainty in
+complex stoichiometry, so skipping this step and keeping the default
+stoichiometry of one for every subunit is a reasonable option. It is also
+possible to complement `ComplexPortal.json` manually with complex
+information from other databases or the literature.
+:::
+
+## Save the ecModel
+
+The ecModel can be saved at any point in the procedure. Only YAML retains
+the full `ecModel.ec` fields, so use it whenever the ecModel needs to be
+modified further.
+
+::::{tab-set}
+:::{tab-item} Ⓜ️ MATLAB
+:sync: matlab
+
+`saveEcModel` writes to the adapter folder automatically; the more generic
+`writeYAMLmodel` writes anywhere. `loadEcModel` or the generic
+`readYAMLmodel` read the model back:
+
+```matlab
+saveEcModel(ecModel, 'ecModel.yml');
+writeYAMLmodel(ecModel, 'C:\path\to\ecModel.yml');
+ecModel = loadEcModel('ecModel.yml');
+ecModel = readYAMLmodel('C:\path\to\ecModel.yml');
+```
+
+For constraint-based analysis in other software, SBML (with an XML
+extension) is often more suitable. `exportModel` and `importModel` handle
+this, but the file does not retain the `ecModel.ec` fields:
+
+```matlab
+exportModel(ecModel, 'C:\path\to\ecModelFull.xml');
+ecModel = importModel('C:\path\to\ecModelFull.xml');
+```
+:::
+:::{tab-item} 🐍 Python
+:sync: python
+
+`save_ec_model` writes YAML, either in the adapter folder or at an
+arbitrary path; `load_ec_model` reads it back:
+
+```python
+from geckopy import load_ec_model, save_ec_model
+
+save_ec_model(ec_model, "ecModel.yml", adapter=adapter)
+save_ec_model(ec_model, r"C:\path\to\ecModel.yml")
+ec_model = load_ec_model("ecModel.yml", adapter=adapter)
+ec_model = load_ec_model(r"C:\path\to\ecModel.yml")
+```
+
+geckopy provides no separate SBML export for ecModels: YAML is the only
+format that round-trips the `ec` fields. Because `ec_model` is a
+`cobra.Model`, plain cobrapy SBML I/O still works for interoperating with
+other tools, with the same caveat as MATLAB's `exportModel`: it does not
+retain the `ec` fields.
+
+```python
+import cobra
+
+cobra.io.write_sbml_model(ec_model, r"C:\path\to\ecModelFull.xml")
+model = cobra.io.read_sbml_model(r"C:\path\to\ecModelFull.xml")
+```
+:::
+::::
+
+## Box 1: Extension of a conventional GEM
+
+Converting a conventional GEM into an empty ecModel runs up to twelve
+operations, some of which are skipped for light models.
+
+1. Gene associations are removed from pseudo-reactions, since these are not
+   assumed to be realistic enzyme-catalyzed reactions. Such reactions are
+   identified either by a reaction name containing `pseudoreaction`, or by
+   a reaction identifier listed in `data/pseudoRxns.tsv`.
+2. Irreversible reactions allowed to carry only a negative flux (lower
+   bound < 0 and upper bound = 0) are inverted.
+3. An `ecModel.rev` vector, recording which reactions are reversible, is
+   built from the lower- and upper-bound vectors.
+4. Nearly all reversible reactions split into forward and reverse
+   reactions, yielding an irreversible ecModel. The new (previously
+   reverse) reactions get `_REV` appended to their identifier; the forward
+   reaction keeps its identifier. Exchange reactions are the only
+   exception: they keep their original form and can still carry a negative
+   flux.
+5. *(Skipped for light ecModels)* Reactions catalyzed by isozymes
+   (indicated by `or` in `ecModel.grRules`) split so each reaction is
+   catalyzed by one enzyme or complex. The new reactions carry the suffix
+   `_EXP_` followed by a sequential number: reaction `r_0001` catalyzed by
+   two isozymes becomes `r_0001_EXP_1` and `r_0001_EXP_2`, and a backward
+   reaction `r_0001_REV` becomes `r_0001_REV_EXP_1` and
+   `r_0001_REV_EXP_2`. Light ecModels keep the original identifiers.
+6. An empty `ecModel.ec` structure is built, to be populated with enzymes,
+   kcat values and reaction-enzyme associations later. (Python:
+   `ec_model.ec`, an `EcData` instance with the same fields under
+   snake_case names; see
+   [the ecModel.ec structure](applying-kcats.md#the-ecmodelec-structure).)
+7. Enzyme details such as MW and amino acid sequence are added to
+   `ecModel.ec`, gathered from UniProt using the UniProt parameters in the
+   model adapter.
+8. `ecModel.ec.rxnEnzMat` (Python: `ec_model.ec.rxn_enz_mat`) records which
+   reactions are catalyzed by which enzymes, initially as a 1, later
+   modifiable to reflect different subunit numbers in a complex.
+9. *(Skipped for light ecModels)* Enzymes are added as pseudo-metabolites
+   and appear in `ecModel.mets` prefixed `prot_` followed by the protein
+   identifier. For example, *S. cerevisiae* enolase gene YHR174W, UniProt
+   identifier P00925, appears as pseudo-metabolite `prot_P00925`.
+10. A protein pool pseudo-metabolite is added to `ecModel.mets`.
+11. *(Skipped for light ecModels)* Usage reactions are added for the enzyme
+    pseudo-metabolites, replenishing the enzymes consumed by catalyzing
+    reactions. Their identifiers are `usage_` followed by the enzyme
+    metabolite identifier, for example `usage_prot_P00925`.
+12. An exchange reaction for the `prot_pool` pseudo-metabolite is added.
+
+:::{tip} GECKO 4: usage and pool exchange reactions already run forward
+Steps 11 and 12 above describe the original GECKO 3.0 protocol, where both
+the `usage_prot_*` reactions and the `prot_pool_exchange` reaction carry a
+*negative* flux (`bounds = (-1000, 0)`): protein flows out of `prot_pool`
+into each enzyme, and out of the model at `prot_pool_exchange`. Current
+GECKO has already flipped both to the more intuitive *forward* direction
+(`bounds = (0, 1000)`;
+[PR #419](https://github.com/SysBioChalmers/GECKO/pull/419)): `usage_prot_*`
+consumes `prot_pool` to produce `prot_<enzyme>`, and `prot_pool_exchange`
+supplies `prot_pool` in the first place. Every dependent function was
+updated to match: `setProtPoolSize`, `addNewRxnsToEC`, `getStandardKcat`,
+`constrainEnzConcs`, `flexibilizeEnzConcs`, `updateProtPool`,
+`getConcControlCoeffs`, `getSubsetEcModel`, `enzymeUsage`,
+`reportEnzymeUsage` and `sensitivityTuning`. geckopy implements this same
+forward convention throughout, since it targets current GECKO rather than
+the GECKO 3.0 protocol. This changes which bound relaxes a constraint and
+which objective coefficient minimizes usage; see the worked example in
+[Growth-rate tuning](growth-rate-tuning.md#too-tight-protein-pool-constraint).
+:::
+
+## See also
+
+- [Gathering kcats](gathering-kcats.md), the next step: sourcing kcat
+  values from BRENDA, DLKcat or OpenKineticsPredictor.
+- [GECKO light vs. full ecModels](gecko-light.md), the tradeoffs between
+  the two ecModel structures.
+- [API reference](../api/index.md), every function in both toolboxes.

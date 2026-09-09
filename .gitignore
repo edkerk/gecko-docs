@@ -167,6 +167,12 @@ venv.bak/
 # mkdocs documentation
 /site
 
+# Sphinx build: generated at build time by scripts/gen_api_pages_sphinx.py,
+# never checked in.
+docs/api/matlab/*.md
+docs/api/python/*.md
+docs/matlab-vs-python.md
+
 # mypy
 .mypy_cache/
 .dmypy.json
