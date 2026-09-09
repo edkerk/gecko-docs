@@ -105,6 +105,58 @@ def is_matlab_function(path: Path) -> bool:
     return False
 
 
+def is_matlab_classdef(path: Path) -> bool:
+    """True if the .m file declares a class rather than a function or script.
+
+    GECKO's classdef files (``model_adapter/``) put their help comment
+    *before* the ``classdef`` line, the reverse of a function's help block,
+    which is why classdef needs its own detector and its own summary
+    extractor below rather than reusing :func:`is_matlab_function`.
+    """
+    try:
+        with path.open(encoding="utf-8-sig", errors="ignore") as fh:
+            for line in fh:
+                stripped = line.strip()
+                if not stripped or stripped.startswith("%"):
+                    continue
+                return stripped.startswith("classdef")
+    except OSError:
+        return False
+    return False
+
+
+def matlab_classdef_summary(path: Path, fname: str) -> str:
+    """First descriptive line of a classdef's leading MATLAB help block."""
+    try:
+        with path.open(encoding="utf-8-sig", errors="ignore") as fh:
+            lines = fh.readlines()
+    except OSError:
+        return ""
+
+    help_lines: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("%"):
+            help_lines.append(stripped.lstrip("%").strip())
+        elif stripped == "" and not help_lines:
+            continue
+        else:
+            break
+
+    cleaned = [h for h in help_lines if h]
+    if not cleaned:
+        return ""
+    first = cleaned[0]
+    if first.lower().startswith(fname.lower()):
+        rest = first[len(fname):].strip(" -:\t")
+        if rest:
+            return rest
+        if len(cleaned) > 1:
+            return cleaned[1]
+        return ""
+    return first
+
+
 def matlab_summary(path: Path, fname: str) -> str:
     """First descriptive line of a function's MATLAB help block."""
     try:
@@ -144,7 +196,8 @@ def matlab_summary(path: Path, fname: str) -> str:
 
 
 def collect_matlab() -> dict[str, list[dict]]:
-    """category -> sorted list of {name, summary} for documented functions."""
+    """category -> sorted list of {name, summary} for documented functions
+    and classes."""
     cats: dict[str, list[dict]] = {}
     for folder, _title in MATLAB_CATEGORIES:
         funcs: dict[str, str] = {}
@@ -152,9 +205,10 @@ def collect_matlab() -> dict[str, list[dict]]:
         for m in base.rglob("*.m"):
             if m.stem == "Contents":
                 continue
-            if not is_matlab_function(m):
-                continue
-            funcs.setdefault(m.stem, matlab_summary(m, m.stem))
+            if is_matlab_function(m):
+                funcs.setdefault(m.stem, matlab_summary(m, m.stem))
+            elif is_matlab_classdef(m):
+                funcs.setdefault(m.stem, matlab_classdef_summary(m, m.stem))
         cats[folder] = [
             {"name": n, "summary": funcs[n]}
             for n in sorted(funcs, key=str.lower)
@@ -163,7 +217,7 @@ def collect_matlab() -> dict[str, list[dict]]:
 
 
 def collect_matlab_all() -> dict[str, str]:
-    """Every GECKO function name -> the category folder it lives in.
+    """Every GECKO function or class name -> the category folder it lives in.
 
     Unlike :func:`collect_matlab` this also walks the folders that are not
     part of the documented category list, so a name checker recognises a
@@ -174,7 +228,9 @@ def collect_matlab_all() -> dict[str, str]:
         rel = m.relative_to(GECKO)
         if rel.parts[0] in {"dlkcat-gecko"}:
             continue
-        if m.stem == "Contents" or not is_matlab_function(m):
+        if m.stem == "Contents":
+            continue
+        if not (is_matlab_function(m) or is_matlab_classdef(m)):
             continue
         found.setdefault(m.stem, rel.parts[0])
     return found

@@ -30,6 +30,7 @@ from api_index import (  # noqa: E402
     PY_PACKAGE_TITLES,
     PYPKG,
     cell,
+    is_matlab_classdef,
     is_matlab_function,
     module_dotted,
     norm,
@@ -83,6 +84,43 @@ def matlab_help(path: Path, fname: str) -> tuple[str, str]:
     return summary, "\n".join(body)
 
 
+def matlab_classdef_help(path: Path, fname: str) -> tuple[str, str]:
+    """(summary, full help text) for one MATLAB classdef, from its leading
+    comment block (before the ``classdef`` line), the reverse of a
+    function's trailing help block; see ``is_matlab_classdef``."""
+    try:
+        lines = path.read_text(encoding="utf-8-sig", errors="ignore").splitlines()
+    except OSError:
+        return "", ""
+
+    help_lines: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("%"):
+            help_lines.append(stripped.lstrip("%").strip())
+        elif stripped == "" and not help_lines:
+            continue
+        else:
+            break
+
+    cleaned = [h for h in help_lines if h]
+    if not cleaned:
+        return "", ""
+    first = cleaned[0]
+    if first.lower().startswith(fname.lower()):
+        rest = first[len(fname):].strip(" -:\t")
+        if rest:
+            summary, body = rest, cleaned[1:]
+        elif len(cleaned) > 1:
+            summary, body = cleaned[1], cleaned[2:]
+        else:
+            summary, body = "", []
+    else:
+        summary = first
+        body = cleaned[1:]
+    return summary, "\n".join(body)
+
+
 def py_help(node: ast.AST) -> tuple[str, str]:
     """(summary, rest of the docstring) for one Python function/class node."""
     doc = ast.get_docstring(node) or ""
@@ -108,9 +146,14 @@ def collect_matlab_full() -> dict[str, list[dict]]:
         if not base.is_dir():
             continue
         for m in base.rglob("*.m"):
-            if m.stem == "Contents" or not is_matlab_function(m):
+            if m.stem == "Contents":
                 continue
-            summary, body = matlab_help(m, m.stem)
+            if is_matlab_function(m):
+                summary, body = matlab_help(m, m.stem)
+            elif is_matlab_classdef(m):
+                summary, body = matlab_classdef_help(m, m.stem)
+            else:
+                continue
             funcs.setdefault(m.stem, {"name": m.stem, "summary": summary, "body": body, "path": m})
         cats[folder] = [funcs[n] for n in sorted(funcs, key=str.lower)]
     return cats

@@ -66,7 +66,13 @@ html[data-theme="dark"] {
 
 /* ===== Home page hero ================================================= */
 .gd-hero { text-align: center; padding: 1.5rem 0 1rem; }
-.gd-hero img.gd-hero-logo { max-width: 380px; width: 100%; height: auto; margin-bottom: .5rem; }
+.gd-hero img.gd-hero-logo {
+  max-width: 380px; width: 100%; height: auto; margin-bottom: .5rem;
+  /* pydata-sphinx-theme gives content images a white backing (right for a
+     transparent screenshot on a dark background, wrong for this logo,
+     which is already transparent and reads fine on either theme). */
+  background-color: transparent !important;
+}
 .gd-tag {
   display: inline-block; font-size: .7rem; font-weight: 700;
   letter-spacing: .07em; text-transform: uppercase;
@@ -79,12 +85,24 @@ html[data-theme="dark"] {
   max-width: 560px; margin: 0 auto .9rem; line-height: 1.65;
 }
 
-/* ===== MATLAB / Python tab-set: a segmented pill control, synced site-wide
-   via :sync: keys on every tab-item. ===================================== */
-.bd-article .tab-set {
+/* ===== MATLAB / Python tab-set: synced site-wide via :sync: keys on every
+   tab-item. Selectors use sphinx-design's actual sd- prefixed classes
+   (.tab-set / label bare do not exist in the rendered DOM). ============= */
+.bd-article .sd-tab-set {
   border-radius: 6px;
 }
-.bd-article .tab-set > label {
+.bd-article .sd-tab-label {
   font-weight: 500;
   font-size: .85rem;
+}
+/* pydata-sphinx-theme unsets sphinx-design's default tab-content
+   overline/underline (`.bd-content .sd-tab-set .sd-tab-content { box-shadow:
+   unset }`) for tab-sets inside article content. Restore a visible outline
+   around the code/content pane using the theme's own border token, so it
+   reads correctly in both color schemes rather than the fixed light-gray
+   sphinx-design default. */
+.bd-content .sd-tab-set .sd-tab-content {
+  border: 1px solid var(--pst-color-border);
+  border-radius: 0 4px 4px 4px;
+  padding: .75rem 1rem;
 }

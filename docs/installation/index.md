@@ -174,7 +174,7 @@ and the COBRA Toolbox, Python through cobrapy.
 ## Docker
 
 DLKcat runs in a Docker container. Installation instructions are at
-[docs.docker.com/get-docker](https://docs.docker.com/get-docker/).
+[docs.docker.com/get-started/get-docker](https://docs.docker.com/get-started/get-docker/).
 
 :::{tip} Running DLKcat without Docker
 If installing Docker Desktop is difficult, the `src/dlkcat-gecko/` folder
