@@ -19,6 +19,7 @@ the format this documentation otherwise uses.
 | `setParam(..., 'obj', ...)` | `model.objective = ...` | choose the objective: maximize growth, or minimize protein pool usage |
 | `mapRxnsToConv` | `map_rxns_to_conv` | map an ecModel flux distribution back onto its starting conventional GEM |
 | `getAllowedBounds` / `ecFVA` | `flux_variability_analysis` / `ec_fva` | flux variability, with `ecFVA` mapping the ranges back to the conventional GEM |
+| `randomSampling` | `random_sampling` | draw feasible flux vectors and report their distribution |
 | `getSubsetEcModel` | `get_subset_ec_model` | trim a generic ecModel down to a context-specific gene/reaction set |
 
 ## The protein pool constraint at different growth rates
@@ -280,6 +281,93 @@ the conventional GEM's reactions carry very high flux variability (around
 | Conventional GEM | 3.104 |
 | ecModel, no proteomics | 0.355 |
 | ecModel, with proteomics | 0.00325 |
+
+## Sample the solution space
+
+:::{tip} Not part of the original protocol
+FVA (above) reports the extremes each reaction can reach one at a time. Flux
+sampling instead draws many feasible flux vectors and reports their
+distribution, which is the more informative object when the question is
+"what does this model actually do", not just "what can it do". Both GECKO's
+underlying RAVEN and geckopy's underlying raven-toolbox expose two
+Markov-chain Monte Carlo samplers, ACHR (Artificially Centered Hit-and-Run)
+and CHRR (Coordinate Hit-and-Run with Rounding), through the same entry
+point used for conventional GEMs (`randomSampling(model, ..., 'method',
+'achr'|'chrr')` in MATLAB; `random_sampling(model, method="achr"|"chrr")`
+in Python). For an ecModel, that choice is not neutral.
+:::
+
+**Why CHRR, not the ACHR default, for ecModels.** ACHR is the default
+because it is cheaper and mixes adequately on a reasonably well-conditioned
+polytope. An ecModel is usually not one. Every `usage_prot` reaction imposes
+a capacity bound derived from a $k_{cat}$ and, once proteomics data is
+integrated (see [Proteomics integration](proteomics-integration.md)), from a
+measured concentration, a combination that tends to overconstrain the
+model, meaning many of these bounds sit close to binding at once. Hundreds
+of simultaneously near-binding constraints collapse the feasible polytope
+into a thin, elongated region rather than a roughly ball-shaped one.
+
+Hit-and-run mixing time scales with a polytope's aspect ratio, the ratio of
+its longest to shortest axis. ACHR's step directions come from a set of
+warmup points (one flux vector per reaction maximized and minimized), and
+on an elongated polytope those directions cluster along the long axes; the
+chain moves freely there while rarely crossing the thin ones. The
+autocorrelation within a chain drops as usual, so the run looks converged,
+but it has explored only a sliver of the true feasible set along the
+enzyme-capacity-bound directions that make an ecModel a distinct model in
+the first place. This is not a hypothetical failure mode: both toolboxes'
+own documentation for the `chrr` method names it directly, MATLAB's
+`randomSampling` help text and Python's `random_sampling` docstring each
+describing CHRR as intended for better mixing on thin, ill-conditioned
+polytopes such as enzyme-constrained models.
+
+CHRR removes the dependency on the original aspect ratio rather than
+working around it. Before sampling, it computes the maximum-volume
+ellipsoid inscribed in the polytope once and substitutes a rounded
+coordinate system built from it; the transformed polytope contains the unit
+ball and sits inside a ball of bounded radius regardless of how thin the
+original was (Haraldsdóttir et al., 2017). Coordinate hit-and-run then runs
+on that rounded space, at the same per-step cost as ACHR once the one-time
+rounding is paid. The result is mixing that no longer depends on how many
+enzyme constraints happen to be near their limit.
+
+**Practical takeaway.** Pass `method="chrr"` (Python) or `'method', 'chrr'`
+(MATLAB) whenever sampling an ecModel, and treat it as closer to mandatory
+the more proteomics data has been integrated, since that is exactly what
+tightens the constraints CHRR's rounding is built to handle. No
+CHRR-versus-ACHR convergence benchmark specific to an ecModel exists in
+this repository yet; the argument above is the documented mechanism, not a
+measurement. What has been measured, on a conventional genome-scale model
+with no enzyme constraints at all, is that ACHR mixing at that scale is
+already slow: RAVEN and raven-toolbox give between-chain agreement
+(Gelman-Rubin R-hat) only after several thousand samples on yeast-GEM, in
+[raven-docs' convergence
+study](https://github.com/edkerk/raven-docs/blob/main/docs/parameter-tuning/studies/sampling-convergence-calibration.md).
+An ecModel starts from that same genome-scale baseline and adds the
+capacity-bound geometry on top; the case for CHRR compounds rather than
+replaces it.
+
+::::{tab-set}
+:::{tab-item} Ⓜ️ MATLAB
+:sync: matlab
+
+```matlab
+solutions = randomSampling(ecModel, 1000, 'method', 'chrr');
+```
+:::
+:::{tab-item} 🐍 Python
+:sync: python
+
+```python
+from raven_toolbox.analysis import random_sampling
+
+result = random_sampling(ec_model, n_samples=1000, method="chrr")
+```
+
+`random_sampling` accepts any `cobra.Model`, an ecModel included, so no
+conversion step is needed before sampling it.
+:::
+::::
 
 ## Context-specific models
 
