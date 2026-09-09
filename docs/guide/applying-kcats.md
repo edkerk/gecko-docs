@@ -329,15 +329,15 @@ reactions have several entities represented in the structure.
 |-------|-----------|------|-------------|
 | `rxns` | string array (Python: `list[str]`) | m | Reaction identifiers gathered from the ecModel, after expansion and making irreversible. |
 | `rxnEnzMat` (Python: `rxn_enz_mat`) | matrix (Python: sparse `scipy.sparse.csr_matrix`) | m x n | Comparable to `rxnGeneMat`, but Enz refers to `ecModel.ec.enzymes`. Positive integers give the number of enzyme subunits annotated to each reaction. |
-| `kcat` | float vector (Python: `numpy.ndarray`) | m | One value per reaction-enzyme (complex) combination, in s^-1, gathered from various sources. |
+| `kcat` | float vector (Python: `numpy.ndarray`) | m | One value per reaction-enzyme (complex) combination, in s^-1, gathered from various sources; `0` means no kcat assigned yet. |
 | `source` | string array (Python: `list[str]`) | m | Where the kcat came from, for example `dlkcat`, `brenda`, `standard` or `custom`. |
 | `notes` | string array (Python: `list[str]`) | m | Free-text notes the user adds. |
 | `eccodes` | string array (Python: `list[str]`) | m | EC numbers gathered from the ecModel and/or UniProt/KEGG, used only for fuzzy kcat matching. |
 | `genes` | string array (Python: `list[str]`) | n | Gene identifiers, corresponding to `ecModel.genes`, matching the columns in `rxnEnzMat`. |
 | `enzymes` | string array (Python: `list[str]`) | n | UniProt protein identifiers derived from the matching entries in `genes`. |
-| `mw` | string array (Python: `numpy.ndarray`) | n | Molecular weight for each enzyme, in Dalton. |
+| `mw` | float vector (Python: `numpy.ndarray`) | n | Molecular weight for each enzyme, in Dalton; unknown is `NaN`. |
 | `sequence` | string array (Python: `list[str]`) | n | Amino acid sequence for each enzyme. |
-| `concs` | float vector (Python: `numpy.ndarray`) | n | Measured concentration of each enzyme in mg/gDCW. |
+| `concs` | float vector (Python: `numpy.ndarray`) | n | Measured concentration of each enzyme in mg/gDCW; unmeasured is `NaN`. |
 
 geckopy adds two convenience properties not present as MATLAB fields:
 `ec_model.ec.n_rxns` and `ec_model.ec.n_enzymes` (the m and n sizes above),
