@@ -11,7 +11,7 @@ GECKO exists as two independent implementations:
 - **GECKO**: the original MATLAB toolbox, built on the RAVEN toolbox and the
   COBRA Toolbox.
 - **geckopy**: the Python port, built on
-  [cobrapy](https://cobrapy.readthedocs.io/), so a model is a `cobra.Model`
+  [cobrapy](https://cobrapy.readthedocs.io/en/latest/), so a model is a `cobra.Model`
   and the wider Python ecosystem works on it directly.
 
 Both build the same enzyme-constrained models from the same algorithms and

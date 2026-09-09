@@ -31,7 +31,7 @@ model, regardless of whether it belongs to a model organism.
 - **MATLAB** version 2019b or above
   ([MathWorks](https://mathworks.com/products/matlab.html)). No additional
   MathWorks toolboxes are required.
-- **RAVEN toolbox** version 2.8.3 or above
+- **RAVEN toolbox** version 2.9.2 or later
   ([repository](https://github.com/SysBioChalmers/RAVEN)), which provides
   the reconstruction functions GECKO builds on, and some of the functions
   used to simulate and analyze ecModels.
@@ -92,7 +92,9 @@ The latest GECKO release installs as a
 [MATLAB Add-On](https://mathworks.com/help/matlab/matlab_env/get-add-ons.html):
 Home → Add-Ons → Get Add-Ons → search "GECKO Toolbox".
 
-Alternatively, clone the repository:
+The [GECKO wiki](https://github.com/SysBioChalmers/GECKO/wiki/Installation-and-upgrade)
+recommends cloning the repository with `git` instead, since it makes
+upgrading a `git pull` rather than a full reinstall:
 
 ```bash
 git clone --depth=1 https://github.com/SysBioChalmers/GECKO
@@ -115,6 +117,13 @@ To remove:
 ```matlab
 GECKOInstaller.uninstall
 ```
+
+**Upgrading, with any install method.** Run `GECKOInstaller.uninstall`
+first, regardless of how GECKO was installed: it clears the old GECKO
+folder from the MATLAB path so a later session does not warn about paths
+that no longer exist. Then update (Add-On manager's Check for Updates, a
+fresh ZIP extract, or `git pull` on the `main` branch) and run
+`GECKOInstaller.install` again.
 :::
 :::{tab-item} 🐍 Python
 :sync: python
@@ -171,10 +180,17 @@ ecModel projects and to download UniProt/KEGG data.
 Both MATLAB and Python use the same underlying solvers: MATLAB through RAVEN
 and the COBRA Toolbox, Python through cobrapy.
 
+:::{tip} Avoid the RAVEN default solver
+RAVEN's own default solver, GLPK, is not recommended for GECKO: ecModels
+are larger and more numerically demanding than the conventional GEMs GLPK
+is adequate for. Configure Gurobi or SoPlex before working with an ecModel
+of genome scale.
+:::
+
 ## Docker
 
 DLKcat runs in a Docker container. Installation instructions are at
-[docs.docker.com/get-docker](https://docs.docker.com/get-docker/).
+[docs.docker.com/get-started/get-docker](https://docs.docker.com/get-started/get-docker/).
 
 :::{tip} Running DLKcat without Docker
 If installing Docker Desktop is difficult, the `src/dlkcat-gecko/` folder

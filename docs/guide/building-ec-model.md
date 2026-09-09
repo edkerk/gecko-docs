@@ -112,7 +112,7 @@ format (recognizable by a `model.metComps` field) first, with
 
 **Warnings when the model loads.** Not every GEM in SBML format strictly
 follows the L3V1 FBCv2 standard; the
-[SBML Validator](https://synonym.caltech.edu/validator_servlet/) reports
+[SBML Validator](https://sbml.bioquant.uni-heidelberg.de/validator_servlet/) reports
 what is wrong. In most cases the model still loads despite the warning. If
 it is later exported to SBML again, RAVEN avoids re-writing the same
 invalid content, so cycling through `importModel`, `exportModel` and

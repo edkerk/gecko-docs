@@ -70,3 +70,33 @@ install v3.2.5 via git or ZIP instead (see the tabs above).
 
 See [Installation](installation/index.md) for the full installation
 instructions.
+
+## Earlier versions: GECKO 1 and 2
+
+GECKO 3's refactor makes it largely incompatible with the two releases
+before it, GECKO 1 ([Sánchez et al., 2017](references.md#gecko-1)) and
+GECKO 2 ([Domenzain et al., 2022](references.md#gecko-2)). The two older
+releases share the same underlying ecModel structure with each other, and
+differ from GECKO 3 (and GECKO 4) in the same ways:
+
+- GECKO 1 and 2 have no `ec` structure: enzyme and kcat information lives
+  scattered across several model fields, rather than collected in one place
+  the way `ecModel.ec` (Python: `ec_model.ec`) does from GECKO 3 onward.
+- Enzymes enter the S-matrix as `1/kcat`, with the molecular weight handled
+  separately in the protein exchange reactions, rather than the combined
+  `MW/kcat` coefficient GECKO 3 introduced (see [Building an empty
+  ecModel](guide/building-ec-model.md)).
+- Neither stores an ecModel in a YAML format that retains full model
+  content the way GECKO 3's does.
+
+The practical consequence: functions from GECKO 3 or 4 do not work on a
+GECKO 1 or 2 ecModel, and functions from GECKO 1 or 2 do not work on a
+GECKO 3 or 4 ecModel. geckopy has no support for GECKO 1/2-formatted
+ecModels; it targets GECKO 4 only.
+
+GECKO 2's last release, 2.0.3, is still available on the [GitHub releases
+page](https://github.com/SysBioChalmers/GECKO/releases/tag/v2.0.3), and the
+[`gecko2` branch](https://github.com/SysBioChalmers/GECKO/tree/gecko2)
+remains for anyone who needs to apply a fix to it. GECKO 1 predates this
+repository's branch history; its release is cited in
+[Citations](references.md#gecko-1) for anyone who needs to reference it.

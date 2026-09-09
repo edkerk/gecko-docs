@@ -158,6 +158,16 @@ GECKO is publicly available under the MIT license at
 <https://doi.org/10.5281/zenodo.7699818>. geckopy, the Python port, is at
 <https://github.com/SysBioChalmers/geckopy>.
 
+## Getting help
+
+Report a bug or request a feature against whichever implementation it
+concerns; ask a usage question in either repository's Discussions.
+
+| | Issues | Discussions |
+|---|---|---|
+| GECKO (MATLAB) | [github.com/SysBioChalmers/GECKO/issues](https://github.com/SysBioChalmers/GECKO/issues) | [github.com/SysBioChalmers/GECKO/discussions](https://github.com/SysBioChalmers/GECKO/discussions) |
+| geckopy (Python) | [github.com/SysBioChalmers/geckopy/issues](https://github.com/SysBioChalmers/geckopy/issues) | [github.com/SysBioChalmers/geckopy/discussions](https://github.com/SysBioChalmers/geckopy/discussions) |
+
 ```{toctree}
 :hidden:
 

@@ -60,8 +60,23 @@ html_theme_options = {
     # clicked, rather than the whole tree opening at once.
     "collapse_navigation": True,
     "show_toc_level": 2,
-    "github_url": "https://github.com/SysBioChalmers/GECKO",
     "use_edit_page_button": False,
+    # Two separate GitHub links, one per implementation, rather than the
+    # single "github_url" shortcut (which only points at one repository).
+    "icon_links": [
+        {
+            "name": "GECKO (MATLAB) on GitHub",
+            "url": "https://github.com/SysBioChalmers/GECKO",
+            "icon": "fa-brands fa-github",
+            "type": "fontawesome",
+        },
+        {
+            "name": "geckopy (Python) on GitHub",
+            "url": "https://github.com/SysBioChalmers/geckopy",
+            "icon": "fa-brands fa-github",
+            "type": "fontawesome",
+        },
+    ],
     "navbar_end": ["theme-switcher", "navbar-icon-links"],
     # The full wordmark, not just the icon, in the navbar; there is no
     # separate dark-mode wordmark asset, so both modes use the same file.
