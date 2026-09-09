@@ -78,10 +78,15 @@ print(report.top_abs_usage.head(10))
 `high_cap_usage` (every enzyme above a capacity-usage threshold, not
 limited to a top-N count), and `totalUsageFlux` / `total_usage_flux` (the
 protein pool exchange's current upper bound, used as the denominator for
-the percentage column). An ecModel with individual concentrations in
+the percentage column). An ecModel without individual concentrations in
 `ecModel.ec.concs` will typically show an empty `highCapUsage` /
-`high_cap_usage` table, since those enzymes are not drawing against a shared
-capacity limit in the same way.
+`high_cap_usage` table: every enzyme draws from the shared protein pool
+through a usage reaction with the generous default upper bound of 1000
+mg/gDCW, so capacity usage rarely comes close to that bound. Once
+individual concentrations constrain some enzymes' usage reactions (see
+[Proteomics integration](proteomics-integration.md)), their upper bounds
+reflect measured availability instead, and capacity usage for those
+enzymes can approach or reach the threshold.
 
 ### Example output
 

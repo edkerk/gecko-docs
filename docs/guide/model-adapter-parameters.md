@@ -1,9 +1,18 @@
 # Model adapter parameters
 
-Every `obj.params` entry in the MATLAB model adapter, and the corresponding
-TOML key in the Python `model_adapter.toml` (dotted keys are `[section]`
-tables). Example values come from the `full_ecModel` tutorial; see
-[Getting started](getting-started.md) for the model adapter itself.
+The core `obj.params` entries in the MATLAB model adapter, and the
+corresponding TOML key in the Python `model_adapter.toml` (dotted keys are
+`[section]` tables). Example values come from the `full_ecModel` tutorial;
+see [Getting started](getting-started.md) for the model adapter itself.
+
+This table covers the parameters used across the main reconstruction
+workflow. It omits two specialized groups: the CMA-ES kcat-tuning
+hyperparameters (`obj.params.evotune.*` in MATLAB, `EvotuneParams` in
+Python's `adapter.params`, covered by [Growth-rate
+tuning](growth-rate-tuning.md)) and, Python-only, `OkpParams` for
+OpenKineticsPredictor settings and the `kcat_aggregate_brenda` /
+`kcat_aggregate_candidates` / `kcat_aggregate_isozymes` defaults that let an
+adapter centrally override a kcat-matching function's aggregation choice.
 
 | MATLAB parameter | Python (TOML) | Example | Explanation |
 |-------------------|---------------|---------|-------------|

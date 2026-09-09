@@ -372,9 +372,12 @@ tuning_result = sensitivity_tuning(ec_model)
 model, and returns a `TunedKcatsResult` with a `.rxns` field (and the
 previous/tuned values); with no explicit growth-rate argument it targets
 `params.gr_exp` from the adapter. It is not available for light ecModels
-(raises `NotImplementedError` if `ec_model.ec.gecko_light` is `True`). The
-Bayesian ABC-SMC variant introduced in GECKO MATLAB 3.3.0
-(`bayesianSensitivityTuning`) is not yet ported to geckopy.
+(raises `NotImplementedError` if `ec_model.ec.gecko_light` is `True`). GECKO
+MATLAB's earlier Bayesian ABC-SMC variant, introduced in GECKO MATLAB 3.3.0
+as `bayesianSensitivityTuning`, has been replaced by a CMA-ES-based module
+(`cmaesKcatTuning`, with `screenKcatLeverage`, `selectTunableMask` and
+`reviewKcatAssignment`); geckopy has a matching `cmaes_kcat_tuning` module.
+See [Tuning against experimental data](tuning-against-experimental-data.md).
 :::
 ::::
 
@@ -531,14 +534,17 @@ ecModel = applyKcatConstraints(ecModel);
 :sync: python
 
 ```python
-from geckopy import apply_kcat_constraints, set_kcat_for_reactions
+from geckopy import set_kcat_for_reactions
 
 set_kcat_for_reactions(ec_model, ["r_0079"], 5.34)
-apply_kcat_constraints(ec_model)
 ```
 
 `set_kcat_for_reactions` takes a list of reaction ids, even for a single
-reaction, and one kcat value applied to all of them.
+reaction, and one kcat value applied to all of them. With its default
+`apply=True`, it also applies the new kcat to the S-matrix immediately, so
+no separate call to `apply_kcat_constraints` is needed here (pass
+`apply=False` to defer that, matching MATLAB's two-step
+`setKcatForReactions` + `applyKcatConstraints`).
 :::
 ::::
 
@@ -693,7 +699,7 @@ have no `usage_prot_*` reactions to minimize.
 :sync: matlab
 
 ```matlab
-sol = pfbaEnzymes(ecModel);
+sol = getPfbaEnzymes(ecModel);
 ```
 :::
 :::{tab-item} 🐍 Python

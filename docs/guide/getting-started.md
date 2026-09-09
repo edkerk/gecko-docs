@@ -20,7 +20,7 @@ fill in.
 
 | MATLAB | Python | |
 |---|---|---|
-| `startGECKOproject` | `geckopy init` | scaffold a new project folder |
+| `createGECKOproject` | `geckopy init` | scaffold a new project folder |
 | `ModelAdapter` (classdef) | `ModelAdapter.from_folder` | define and load the model adapter |
 | `loadDatabases('kegg')` | `geckopy kegg-download` | download KEGG data for identifier conversion |
 
@@ -31,7 +31,7 @@ fill in.
 :sync: matlab
 
 ```matlab
-startGECKOproject();
+createGECKOproject();
 ```
 
 A dialog prompts for a location and creates the new folder there.
@@ -44,19 +44,23 @@ geckopy init myproject
 ```
 
 `init` is a subcommand of the `geckopy` command-line tool installed
-alongside the package (see [Installation](../installation/index.md)). Add
-`--advanced` to also scaffold the Bayesian kcat-tuning hyperparameter
-section described in
-[Tuning against experimental data](tuning-against-experimental-data.md).
+alongside the package (see [Installation](../installation/index.md)). The
+generated `model_adapter.toml` always includes the Bayesian kcat-tuning
+hyperparameter section described in
+[Tuning against experimental data](tuning-against-experimental-data.md),
+commented out at its default values; no separate flag is needed to add it.
 :::
 ::::
 
-The new folder contains four subfolders: `code` and `data` hold custom code
-and data used during reconstruction and analysis; `models` and `output` hold
-reconstructed ecModels and simulation results. Store the starting GEM under
-`models`; other locations work too, but keeping it there makes the project
-self-contained. The folder that contains the model adapter is called the
-**adapter folder** throughout this guide.
+MATLAB's `createGECKOproject` creates four subfolders: `code` and `data`
+hold custom code and data used during reconstruction and analysis; `models`
+and `output` hold reconstructed ecModels and simulation results. `geckopy
+init` creates only `data`, `models` and `output`; it writes `adapter.py`,
+the equivalent of a custom `code` folder, directly in the project root
+instead. Store the starting GEM under `models`; other locations work too,
+but keeping it there makes the project self-contained. The folder that
+contains the model adapter is called the **adapter folder** throughout this
+guide.
 
 `data` files use the same formats (TSV, JSON) in both languages, so a
 project's `data` folder built with one toolbox can be reused with the other.
@@ -248,20 +252,22 @@ fclose(fID);
 :sync: python
 
 geckopy downloads KEGG data through the `geckopy` CLI rather than a Python
-function, writing a CSV with `uniprot`, `gene`, `kegg_gene` and further EC,
-MW, pathway and sequence columns:
+function, writing a header-less CSV with `uniprot`, `gene`, `kegg_gene` and
+further EC, MW, pathway and sequence columns:
 
 ```bash
 geckopy kegg-download eco data/kegg.csv
 ```
 
 Select the two relevant columns and write them out as
-`uniprotConversion.tsv`:
+`uniprotConversion.tsv`. The file has no header row, so the column names
+must be supplied to `pandas.read_csv` rather than read from it:
 
 ```python
 import pandas as pd
 
-kegg = pd.read_csv(params.path / "data" / "kegg.csv")
+columns = ["uniprot", "gene", "kegg_gene", "ec", "mw", "pathway", "sequence"]
+kegg = pd.read_csv(params.path / "data" / "kegg.csv", header=None, names=columns)
 kegg[["kegg_gene", "uniprot"]].rename(columns={"kegg_gene": "genes"}).to_csv(
     params.path / "data" / "uniprotConversion.tsv", sep="\t", index=False,
 )

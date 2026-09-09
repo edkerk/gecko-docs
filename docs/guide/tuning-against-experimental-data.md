@@ -1,8 +1,12 @@
 # Tuning against experimental data
 
-:::{note} Python only
-This workflow is currently available in geckopy only, with no MATLAB
-GECKO equivalent. Every code block on this page is Python.
+:::{note} Python code, with a MATLAB equivalent
+Every code block on this page is Python. GECKO MATLAB has an equivalent
+module, `src/kcat_tuning/evotune/`, with the corresponding functions
+`loadEvotuneData`, `screenKcatLeverage`, `selectTunableMask`,
+`cmaesKcatTuning`, `tunePriorPenaltyWeight` and, for the assignment-review
+step below, `reviewKcatAssignment`; this page does not cover the MATLAB
+call signatures.
 :::
 
 [Growth-rate tuning](growth-rate-tuning.md) raises kcats one at a time
@@ -10,8 +14,9 @@ until a single target growth rate is reached. `cmaes_kcat_tuning` instead
 fits many kcats at once, with CMA-ES, against a full set of measured
 growth rates and fluxes across several conditions, weighted by how much
 each kcat's source is trusted. This page covers one recommended path
-through that fitting process end to end. It is not a full reference; the
-docstrings in `geckopy.kcat_tuning.evotune` document every option.
+through that fitting process end to end, in geckopy. It is not a full
+reference; the docstrings in `geckopy.kcat_tuning.evotune` document every
+option.
 
 ## Functions on this page
 
@@ -238,10 +243,16 @@ table from the previous step, expanded from tie-groups back to individual
 `model.ec.rxns` positions via its `_positions` column, so that looking odd
 and actually mattering are not confused; without it, rows come back in
 input order, and looking odd is all that remains. `coverage` (a share of
-flagged leverage) or `top` (a row count) then truncates the report: on
-ecYeastGEM, tightening the checks themselves does not work half as well as
-this does, since `coverage=0.8` cuts 2,575 unfiltered rows to 33, and the
-first row alone carries half.
+the flagged rows' total leverage) or `top` (a row count) then truncates
+the report to a length worth a curator's time: `coverage` adapts to the
+model, keeping however many rows it takes to carry that share of the
+flagged leverage, where a fixed `top` does not. On ecYeastGEM the
+underlying checks flag around 1,900 of 4,834 kcats before any truncation,
+which on its own is still too long a report to read; tightening the checks
+themselves does not fix this nearly as well as truncating by leverage
+does, since looking odd (what the checks measure) and actually mattering
+(what `leverage` measures) are unrelated properties, so a stricter check
+threshold drops high-leverage entries as readily as low-leverage ones.
 
 ## Tune
 
@@ -334,7 +345,9 @@ leverage_by_rxn = dict(zip(screen["rxn_id"], screen["leverage"]))
 leverage = [leverage_by_rxn.get(r, 0.0) for r in result.rxns]
 
 annotations = annotate_from_model(model, result.rxns)
-rows = result.corrections(leverage=leverage, **annotations)
+rows = result.corrections(
+    leverage=leverage, names=annotations["names"], ec_codes=annotations["ec_codes"],
+)
 open("corrections.tsv", "w").write(corrections_tsv(rows))
 ```
 

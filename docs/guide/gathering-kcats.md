@@ -26,7 +26,7 @@ none of these sources cover.
 | `findMetSmiles` | `find_met_smiles` | annotate metabolites with SMILES for DLKcat/OKP |
 | `writeDLKcatInput` / `runDLKcat` / `readDLKcatOutput` | `write_dlkcat_input` / `run_dlkcat` / `read_dlkcat_output` | run DLKcat locally |
 | `submitOpenKineticsPredictor` / `fetchOpenKineticsPredictor` | `submit_open_kinetics_predictor` / `fetch_open_kinetics_predictor` | run a kcat prediction job on OpenKineticsPredictor |
-| `mergeDLKcatAndFuzzyKcats` / `mergeKcats` | `merge_dlkcat_and_fuzzy_kcats` / `merge_kcats` | merge kcat lists from multiple sources |
+| `mergeKcats` | `merge_kcats` | merge kcat lists from multiple sources |
 
 ## Choose kcat sources
 
@@ -82,7 +82,7 @@ or its EC annotations are not trusted, run only `getECfromDatabase`:
 ecModel = getECfromDatabase(ecModel);
 ```
 
-`copyECtoGEM` transfers EC numbers derived from the database back into the
+`applyECcodes` transfers EC numbers derived from the database back into the
 `model.eccodes` fields, if desired.
 :::
 :::{tab-item} 🐍 Python
@@ -101,7 +101,7 @@ second already has the same effect as the MATLAB two-call sequence above,
 with no separate "which entries were not populated" step. If the starting
 GEM's EC annotations are not trusted, skip `fill_eccodes_from_gem` and run
 only `fill_eccodes_from_database`. `copy_ec_to_gem` is the equivalent of
-`copyECtoGEM`, writing into each reaction's `annotation["ec-code"]`
+`applyECcodes`, writing into each reaction's `annotation["ec-code"]`
 (cobrapy's convention) rather than a top-level `model.eccodes` cell array.
 :::
 ::::
@@ -407,43 +407,17 @@ The downloaded result is cached at `data/OKP_output.csv`; pass `useStored`
 (MATLAB) / `use_stored=True` (Python) to re-parse it without contacting the
 API again. `kcatList_OKP` / `kcat_list_okp` has the same shape as the
 BRENDA and DLKcat kcat lists above, so the merge step below, and
-`selectKcatValue`/`apply_kcat_list` on
+`assignKcatValues`/`apply_kcat_list` on
 [Applying kcats](applying-kcats.md#apply-the-enzyme-constraints), accept it
 identically.
 
 ## Merge DLKcat and BRENDA structures
 
-Merging kcat lists from multiple sources increases coverage. The same call
-works with `kcatList_OKP` / `kcat_list_okp` in place of the DLKcat list,
-since the function merges by structure rather than by name, regardless of
-which predictor produced the second list:
-
-::::{tab-set}
-:::{tab-item} Ⓜ️ MATLAB
-:sync: matlab
-
-```matlab
-kcatList_merged = mergeDLKcatAndFuzzyKcats(kcatList_DLKcat, kcatList_fuzzy);
-```
-:::
-:::{tab-item} 🐍 Python
-:sync: python
-
-```python
-from geckopy import merge_dlkcat_and_fuzzy_kcats
-
-kcat_list_merged = merge_dlkcat_and_fuzzy_kcats(kcat_list_dlkcat, kcat_list_fuzzy)
-```
-:::
-::::
-
-:::::{tip} GECKO 4: mergeKcats generalizes to any number of sources
-`mergeDLKcatAndFuzzyKcats`/`merge_dlkcat_and_fuzzy_kcats` above are thin
-two-source convenience wrappers around a more general merge function that
-both languages now have: `mergeKcats` (MATLAB) / `merge_kcats` (Python),
-which accept any number of `kcatList`s, for example BRENDA, DLKcat and
-OpenKineticsPredictor results together, with an explicit priority order
-per source:
+Merging kcat lists from multiple sources increases coverage, keeping the
+highest-priority source for each reaction. The same call works with
+`kcatList_OKP` / `kcat_list_okp` in place of the DLKcat list, since the
+function merges by structure rather than by name, regardless of which
+predictor produced the second list:
 
 ::::{tab-set}
 :::{tab-item} Ⓜ️ MATLAB
@@ -468,12 +442,28 @@ kcat_list_merged = merge_kcats(
 :::
 ::::
 
-`'database_top'`/`'database_bottom'` are reserved tier tokens for
-strong/weak fuzzy BRENDA matches; any other token (`'dlkcat'`, `'catapro'`,
-...) matches a row's own `source` value. A third reserved tier,
-`'database_exact'`, ranks above both: an exact experimental measurement
-with no fuzzy wildcarding, which OpenKineticsPredictor can return directly.
-:::::
+`mergeKcats` (MATLAB) / `merge_kcats` (Python) accepts any number of
+`kcatList`s, for example BRENDA, DLKcat and OpenKineticsPredictor results
+together, each assigned an explicit priority in `sourcePriority` /
+`source_priority`. `'database_top'`/`'database_bottom'` are reserved tier
+tokens for strong/weak fuzzy BRENDA matches; any other token (`'dlkcat'`,
+`'catapro'`, ...) matches a row's own `source` value. A third reserved
+tier, `'database_exact'`, ranks above both: an exact experimental
+measurement with no fuzzy wildcarding, which OpenKineticsPredictor can
+return directly.
+
+:::{note} `mergeDLKcatAndFuzzyKcats`/`merge_dlkcat_and_fuzzy_kcats` are deprecated
+Both are thin two-source wrappers around `mergeKcats`/`merge_kcats` with the
+priority order `['database_top', 'dlkcat', 'database_bottom']`, kept only
+for backward compatibility with the original two-source signature:
+
+```matlab
+kcatList_merged = mergeDLKcatAndFuzzyKcats(kcatList_DLKcat, kcatList_fuzzy);
+```
+
+Both raise a deprecation warning when called; use `mergeKcats`/`merge_kcats`
+directly, as shown above.
+:::
 
 Merging assigns a single kcat to each reaction, with priority given to
 BRENDA values from a full EC number match. Mismatches on organism and
