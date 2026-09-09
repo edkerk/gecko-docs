@@ -410,6 +410,86 @@ cumulative distribution:
     )
     ```
 
+## Sample the solution space
+
+!!! tip "Not part of the original protocol"
+    FVA (above) reports the extremes each reaction can reach one at a time.
+    Flux sampling instead draws many feasible flux vectors and reports their
+    distribution, which is the more informative object when the question is
+    "what does this model actually do", not just "what can it do". Both RAVEN
+    and raven-toolbox expose two Markov-chain Monte Carlo samplers, ACHR
+    (Artificially Centered Hit-and-Run) and CHRR (Coordinate Hit-and-Run with
+    Rounding), through the same entry point used for conventional GEMs
+    (`randomSampling(model, ..., 'method', 'achr'|'chrr')` in MATLAB;
+    `random_sampling(model, method="achr"|"chrr")` in Python). For an ecModel,
+    that choice is not neutral.
+
+**Why CHRR, not the ACHR default, for ecModels.** ACHR is the default because it
+is cheaper and mixes adequately on a reasonably well-conditioned polytope. An
+ecModel is usually not one. Every `usage_prot` reaction imposes a capacity bound
+derived from a $k_{cat}$ and, once proteomics data is integrated (Stage 4), from
+a measured concentration; Stage 4 already notes that this combination tends to
+overconstrain the model, meaning many of these bounds sit close to binding at
+once. Hundreds of simultaneously near-binding constraints collapse the
+feasible polytope into a thin, elongated region rather than a roughly
+ball-shaped one.
+
+Hit-and-run mixing time scales with a polytope's aspect ratio, the ratio of its
+longest to shortest axis. ACHR's step directions come from a set of warmup
+points (one flux vector per reaction maximized and minimized), and on an
+elongated polytope those directions cluster along the long axes; the chain
+moves freely there while rarely crossing the thin ones. The autocorrelation
+within a chain drops as usual, so the run *looks* converged, but it has only
+explored a sliver of the true feasible set along the enzyme-capacity-bound
+directions that make an ecModel a distinct model in the first place. This is
+not a hypothetical failure mode: both toolboxes' own documentation for the
+`chrr` method names it directly, MATLAB's `randomSampling` help text and
+Python's `random_sampling` docstring each describing CHRR as intended "for
+better mixing on thin/ill-conditioned polytopes such as enzyme-constrained
+models."
+
+CHRR removes the dependency on the original aspect ratio rather than working
+around it. Before sampling, it computes the maximum-volume ellipsoid inscribed
+in the polytope once and substitutes a rounded coordinate system built from it;
+the transformed polytope contains the unit ball and sits inside a ball of
+bounded radius regardless of how thin the original was (Haraldsdóttir et al.,
+2017). Coordinate hit-and-run then runs on that rounded space, at the same
+per-step cost as ACHR once the one-time rounding is paid. The result is mixing
+that no longer depends on how many enzyme constraints happen to be near their
+limit.
+
+**Practical takeaway.** Pass `method="chrr"` (Python) or `'method', 'chrr'`
+(MATLAB) whenever sampling an ecModel, and treat it as closer to mandatory the
+more proteomics data has been integrated, since that is exactly what tightens
+the constraints CHRR's rounding is built to handle. No CHRR-versus-ACHR
+convergence benchmark specific to an ecModel exists in this repository yet; the
+argument above is the documented mechanism, not a measurement. What has been
+measured, on a conventional genome-scale model with no enzyme constraints at
+all, is that ACHR mixing at that scale is already slow: RAVEN and raven-toolbox
+give between-chain agreement (Gelman-Rubin R-hat) only after several thousand
+samples on yeast-GEM, in [raven-docs' convergence
+study](https://github.com/edkerk/raven-docs/blob/main/docs/parameter-tuning/studies/sampling-convergence-calibration.md).
+An ecModel starts from that same genome-scale baseline and adds the
+capacity-bound geometry on top; the case for CHRR compounds rather than
+replaces it.
+
+=== "MATLAB"
+
+    ```matlab
+    solutions = randomSampling(ecModel, 1000, 'method', 'chrr');
+    ```
+
+=== "Python"
+
+    ```python
+    from raven_toolbox.analysis import random_sampling
+
+    result = random_sampling(ec_model, n_samples=1000, method="chrr")
+    ```
+
+    `random_sampling` accepts any `cobra.Model`, an ecModel included, so no
+    conversion step is needed before sampling it.
+
 ## Compare full and light ecModel simulations
 
 **Step 76.** To demonstrate the similarity between full and light ecModel
