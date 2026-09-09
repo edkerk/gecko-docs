@@ -1,56 +1,40 @@
 # GECKO Documentation
 
-This repository contains a documentation version of the protocol:
+Documentation for GECKO, a MATLAB toolbox, and geckopy, its Python port, for
+reconstructing, simulating and analyzing enzyme-constrained genome-scale
+metabolic models (ecModels). Built with [Sphinx](https://www.sphinx-doc.org/),
+[MyST](https://myst-parser.readthedocs.io/) and
+[pydata-sphinx-theme](https://pydata-sphinx-theme.readthedocs.io/), matching
+the [raven-docs](https://github.com/edkerk/raven-docs) setup for RAVEN and
+raven-toolbox.
 
-> Chen, Y., Gustafsson, J., Tafur Rangel, A. et al. *Reconstruction, simulation
-> and analysis of enzyme-constrained metabolic models using GECKO Toolbox 3.0.*
-> Nature Protocols 19, 629-667 (2024).
-> https://doi.org/10.1038/s41596-023-00931-7
-
-The content has been reorganized into a set of Markdown pages suitable for
-hosting on [Read the Docs](https://readthedocs.org/) with
-[MkDocs](https://www.mkdocs.org/) and the
-[Material theme](https://squidfunk.github.io/mkdocs-material/).
-
-Alongside the protocol narrative, the site includes an auto-generated
-**API reference** that documents the MATLAB (GECKO) and Python (geckopy)
-implementations side by side, extracted directly from each toolbox's source
-(pulled in as git submodules). See
+Alongside the Guide, the site includes an auto-generated **API reference**
+that documents both implementations side by side, statically extracted at
+build time from each toolbox's source (pulled in as git submodules). See
 [API reference (MATLAB + Python)](#api-reference-matlab--python) below.
 
 ## Repository layout
 
 ```
-gecko-protocol/
-├── .readthedocs.yaml          # Read the Docs build configuration (incl. submodules)
-├── .gitmodules                # GECKO + geckopy submodule definitions
-├── mkdocs.yml                 # MkDocs site configuration and navigation
-├── requirements.txt           # Python build dependencies
-├── README.md                  # This file
-├── GECKO/                     # submodule: SysBioChalmers/GECKO    (MATLAB source)
-├── geckopy/                   # submodule: SysBioChalmers/geckopy  (Python source)
+gecko-docs/
+├── .readthedocs.yaml       # Read the Docs build configuration (incl. submodules)
+├── .gitmodules              # GECKO + geckopy submodule definitions
+├── requirements-sphinx.txt  # Python build dependencies
+├── README.md                # This file
+├── GECKO/                   # submodule: SysBioChalmers/GECKO    (MATLAB source)
+├── geckopy/                  # submodule: SysBioChalmers/geckopy  (Python source)
+├── scripts/
+│   ├── api_index.py             # shared MATLAB/Python source-collection helpers
+│   ├── gen_api_pages_sphinx.py  # generates docs/api/ and docs/matlab-vs-python.md
+│   └── curated_pairs.yml        # hand-curated name pairs the generator can't match automatically
 └── docs/
+    ├── conf.py               # Sphinx configuration
     ├── index.md               # Landing page
-    ├── introduction.md        # Background, framework, applications, limitations
-    ├── installation.md        # Materials, software and equipment setup
-    ├── stage0-preparation.md  # Stage 0: project files and data
-    ├── stage1-structure-expansion.md
-    ├── stage2-kcat-integration.md
-    ├── stage3-model-tuning.md
-    ├── stage4-proteomics.md
-    ├── stage5-simulation-analysis.md
-    ├── troubleshooting.md
-    ├── anticipated-results.md
-    ├── references.md
-    └── api/                   # auto-generated bilingual API reference
-        ├── index.md           # overview + MATLAB <-> Python mapping
-        ├── build.md
-        ├── gather-kcats.md
-        ├── enzyme-data.md
-        ├── kcat-sensitivity.md
-        ├── limit-proteins.md
-        ├── simulation-utilities.md
-        └── adapter.md
+    ├── migrate.md, gecko3-to-gecko4.md, gecko-to-geckopy.md
+    ├── references.md          # Citations
+    ├── installation/index.md
+    ├── guide/                 # Introduction, Getting started, and the task pages
+    └── api/                   # auto-generated bilingual API reference (not checked in)
 ```
 
 ## Building locally
@@ -60,21 +44,16 @@ gecko-protocol/
 git submodule update --init --recursive   # fetch the GECKO + geckopy sources
 python -m venv .venv
 source .venv/bin/activate        # on Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-mkdocs serve
+pip install -r requirements-sphinx.txt
+sphinx-build -b html docs docs/_build/html
 ```
 
 The `git submodule update --init` step is required: without it the `GECKO/`
-and `geckopy/` source trees are empty and the API reference fails to build.
+and `geckopy/` source trees are empty and the API reference builds with no
+functions in it.
 
-Then open http://127.0.0.1:8000 in your browser. The site rebuilds
-automatically as you edit the Markdown files.
-
-To produce a static build:
-
-```bash
-mkdocs build        # output written to ./site
-```
+Open `docs/_build/html/index.html` in a browser. There is no live-reload dev
+server configured; re-run `sphinx-build` after editing.
 
 ## Hosting on Read the Docs
 
@@ -89,30 +68,38 @@ built on every push without any extra configuration.
 
 ## API reference (MATLAB + Python)
 
-The `docs/api/` pages document both toolboxes side by side using
-[mkdocstrings](https://mkdocstrings.github.io/) with its Python and MATLAB
-handlers. Each function is shown in a tabbed block — the Python docstring and
-the MATLAB help text are extracted live from the source. The sources are git
-submodules pinned to each project's `main` branch:
+`docs/api/` documents both toolboxes side by side, plus
+`docs/matlab-vs-python.md`, a generated table pairing every function that
+exists in both. All of it is written by `scripts/gen_api_pages_sphinx.py`
+at build time (run from `docs/conf.py`'s `setup()` hook), which extracts
+MATLAB help blocks and Python docstrings directly from source: no MATLAB
+runtime, no installed geckopy package, and no live-rendering plugin
+involved. Nothing under `docs/api/` or `docs/matlab-vs-python.md` is
+checked into the repository or should be hand-edited; regenerate by
+rebuilding. Function pairs that don't match by name alone (geckopy renamed
+part of the API during the port) are recorded in `scripts/curated_pairs.yml`,
+which is validated against the live source at build time.
+
+Sources are git submodules pinned to each project's tracked development
+branch (see `.gitmodules`):
 
 - `GECKO/`   — [SysBioChalmers/GECKO](https://github.com/SysBioChalmers/GECKO) (MATLAB)
 - `geckopy/` — [SysBioChalmers/geckopy](https://github.com/SysBioChalmers/geckopy) (Python)
-
-Neither toolbox needs to be installed to build the docs: the Python handler
-reads the source statically (via griffe) and the MATLAB handler parses it with
-tree-sitter (no MATLAB runtime required).
 
 To refresh the reference against the latest upstream code:
 
 ```bash
 git submodule update --remote --recursive
 git add GECKO geckopy
-git commit -m "docs: bump GECKO and geckopy submodules"
+git commit -m "chore: update submodules to latest tracked branches"
 ```
+
+(`.github/workflows/update-submodules.yml` does this automatically on a
+daily schedule.)
 
 ## License and attribution
 
 The GECKO source code is released under the MIT license at
-https://github.com/SysBioChalmers/GECKO. The scientific content summarized in
-these pages is the work of the original authors; please cite the Nature
-Protocols article above when using this protocol.
+https://github.com/SysBioChalmers/GECKO. The scientific content summarized
+in these pages is the work of the original authors; see
+[Citations](docs/references.md) for the papers to cite.
