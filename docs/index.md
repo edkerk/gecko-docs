@@ -1,8 +1,10 @@
 # GECKO
 
 <div class="gd-hero">
-  <img class="gd-hero-logo" src="_static/gecko-logo.png" alt="GECKO">
-  <p class="gd-tag">MATLAB &amp; Python</p>
+  <div class="gd-hero-top">
+    <img class="gd-hero-logo" src="_static/gecko-logo.png" alt="GECKO">
+    <p class="gd-tag">MATLAB &amp; Python</p>
+  </div>
   <p class="gd-tagline">Reconstruction, simulation and analysis of enzyme-constrained metabolic models (ecModels): a MATLAB toolbox built on RAVEN, and geckopy, a Python port built on cobrapy.</p>
 </div>
 

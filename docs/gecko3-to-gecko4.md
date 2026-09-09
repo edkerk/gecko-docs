@@ -30,11 +30,38 @@ GECKO 3 script keeps producing the same result:
 - kcat-list merging generalizes to any number of sources, rather than a
   fixed DLKcat/fuzzy-matching pair.
 - Three analysis functions are new and were not part of the GECKO 3.0
-  protocol: `getEnzymeBottlenecks`, `pfbaEnzymes`, `relaxProteomicsGreedy`.
+  protocol: `getEnzymeBottlenecks`, `getPfbaEnzymes`, `relaxProteomicsGreedy`.
 
 This page is updated as GECKO 4 development continues; it does not yet
 cover every change. The [Guide](guide/index.md) pages flag GECKO-4-specific
 behavior alongside the GECKO 3.0 protocol steps they sit next to.
+
+## Renamed functions
+
+GECKO 4 renamed several functions. Each old name still works exactly as
+before: it calls the new function internally and prints a one-time
+deprecation warning, so an unmodified GECKO 3 script keeps running, not
+just keeps compiling. The old names live under `GECKO/src/deprecated/` and
+will be removed in a future release; update a script's function calls to
+the current name on the same schedule, rather than after the old name
+actually breaks.
+
+| GECKO 3 name | GECKO 4 name | Why, where a specific reason is documented |
+|---|---|---|
+| `startGECKOproject` | `createGECKOproject` | -- |
+| `copyECtoGEM` | `applyECcodes` | -- |
+| `enzymeUsage` | `getEnzymeUsage` | -- |
+| `pfbaEnzymes` | `getPfbaEnzymes` | -- |
+| `addCarbonNum` | `fillCarbonNum` | -- |
+| `updateGECKOdoc` | `buildGECKOdoc` | -- |
+| `selectKcatValue` | `assignKcatValues` | clarifies that the function writes `ecModel.ec.kcat`, not just selects a candidate value |
+| `mergeDLKcatAndFuzzyKcats` | `mergeKcats` | generalized to merge kcat lists from any number of sources, not just a fixed DLKcat/fuzzy-matching pair (see above) |
+
+geckopy, which targets GECKO 4, uses each current name's `snake_case` form
+where a direct counterpart exists (`get_enzyme_usage`, `merge_kcats`, and
+so on); `createGECKOproject`'s counterpart is the `geckopy init` CLI
+command rather than an importable function. See [MATLAB ↔
+Python](matlab-vs-python.md) for the full name mapping.
 
 ## Staying on GECKO 3
 
