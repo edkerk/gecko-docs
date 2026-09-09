@@ -28,7 +28,9 @@ ecModels](gecko-light.md).
 procedure. At each iteration, it computes the control coefficient of every
 still-constrained, measured enzyme (the change in growth rate over the
 change in that enzyme's concentration) and increases the concentration of
-whichever enzyme has the largest one, by a fixed fold change. It repeats
+whichever enzyme has the largest one, by a fold change that compounds each
+time that same enzyme is picked again (its upper bound becomes
+`original_concentration * (1 + fold_change * pick_count)`). It repeats
 until the target growth rate is reached, then runs a tighten-back pass that
 minimizes protein pool usage at the target growth rate and drops any
 relaxation that turned out not to be needed. The result stays as close to
@@ -51,11 +53,11 @@ enzymes.
 | Aspect | `flexibilizeEnzConcs` / `flexibilize_enz_concs` | `relaxProteomicsGreedy` / `relax_proteomics_greedy` |
 |---|---|---|
 | Selection signal | largest control coefficient (finite difference; one re-solve per candidate) | largest absolute shadow price (read directly from one solve) |
-| Relaxation step | gradual: the usage upper bound moves by a fixed fold change, and the same enzyme can be picked again on a later iteration | all at once: the usage upper bound jumps straight to the default (effectively unconstrained) |
+| Relaxation step | gradual: the usage upper bound moves by a fold change that compounds on repeat picks of the same enzyme | all at once: the usage upper bound jumps straight to the default (effectively unconstrained) |
 | Tighten-back | yes, a refinement pass drops any relaxation the final flux distribution did not actually need | no, every relaxed enzyme stays unconstrained |
 | Result stringency | tight, the minimal relaxation that is proteomics-faithful | loose, tends to relax more than necessary |
 | Falls back to relaxing the protein pool itself | yes, when no single enzyme helps further | no |
-| Non-convergence | returns a partial result with a warning | raises an error |
+| Non-convergence | returns a partial result with a warning | returns a partial result with a warning if eligible candidates run out first; raises an error if the iteration cap is hit while candidates still remain |
 
 Use `flexibilizeEnzConcs` / `flexibilize_enz_concs` as the default when
 staying close to the measured proteomics matters. Use
@@ -208,12 +210,13 @@ Returns a `GreedyRelaxResult` with the same shape: `.trace`, `.relaxed`,
 ::::
 
 :::{warning} What can go wrong
-- **Running out of candidates before convergence.** MATLAB returns a partial
-  result with `converged=false` and a warning; Python raises a
-  `RuntimeError` (`relax_proteomics_greedy` raises regardless of language
-  once its iteration cap is hit while candidates remain, a stricter failure
-  mode than `flexibilizeEnzConcs` / `flexibilize_enz_concs`, which degrades
-  to a partial result instead).
+- **Running out of eligible candidates before convergence.** Both languages
+  return a partial result with `converged=false` (`converged=False` in
+  Python) and a warning, rather than erroring.
+- **Exhausting the iteration cap while candidates still remain.** MATLAB
+  raises an `error`; Python raises a `RuntimeError`. Both languages error
+  regardless in this case, a stricter failure mode than `flexibilizeEnzConcs`
+  / `flexibilize_enz_concs`, which never hard-errors on non-convergence.
 - **Expecting a minimal relaxation.** `relaxProteomicsGreedy` /
   `relax_proteomics_greedy` has no tighten-back pass, so it typically leaves
   the ecModel less constrained than the proteomics data actually require.

@@ -15,12 +15,12 @@ bounded to a realistic value, so growth is not yet meaningfully limited.
 | `applyCustomKcats` | `apply_custom_kcats` | apply manually curated kcat values |
 | `getKcatAcrossIsozymes` | `fill_kcats_from_isozymes` | fill missing isozyme kcats with the mean of their isozymes |
 | `getStandardKcat` | `assign_standard_kcat` | assign a fallback kcat to reactions with no gene association |
-| `selectKcatValue` | `apply_kcat_list` | populate `ecModel.ec.kcat` from a kcat list |
+| `assignKcatValues` | `apply_kcat_list` | populate `ecModel.ec.kcat` from a kcat list |
 | `applyKcatConstraints` | `apply_kcat_constraints` | apply `ecModel.ec.kcat` to the model's stoichiometry |
 | `setProtPoolSize` / `calculateFfactor` | `set_prot_pool_size` / `calculate_f_factor` | constrain the protein pool exchange reaction |
 
 :::{note} Functions that populate `ecModel.ec.kcat` run in any order
-`selectKcatValue`/`apply_kcat_list`, `applyCustomKcats`/`apply_custom_kcats`
+`assignKcatValues`/`apply_kcat_list`, `applyCustomKcats`/`apply_custom_kcats`
 and the other functions below can run in any order. Unless stated
 otherwise, each overwrites existing values and documents the source in
 `ecModel.ec.source`, for example `brenda` or `custom`.
@@ -38,7 +38,7 @@ is used:
 :sync: matlab
 
 ```matlab
-ecModel = selectKcatValue(ecModel, kcatList_merged);
+ecModel = assignKcatValues(ecModel, kcatList_merged);
 ```
 :::
 :::{tab-item} 🐍 Python
@@ -80,10 +80,11 @@ This overwrites existing values in `ecModel.ec.kcat` for matching
 reactions, on the assumption that custom values carry higher confidence.
 
 **Custom values that fail to match.** If `notMatch` contains reactions,
-their values were not successfully applied, commonly because the gene
-association between the model and the input file matches less than 50%.
-Inspect which enzymes are associated with the reaction in the ecModel and
-curate the input file to resolve it.
+their values were not successfully applied, because the gene association
+between the model and the input file is a partial match: at least 50%, but
+not 100%. A gene association that matches less than 50% is skipped entirely
+and does not appear in `notMatch`. Inspect which enzymes are associated with
+the reaction in the ecModel and curate the input file to resolve it.
 :::
 :::{tab-item} 🐍 Python
 :sync: python
@@ -125,7 +126,11 @@ from geckopy import fill_kcats_from_isozymes
 fill_kcats_from_isozymes(ec_model)
 ```
 
-`get_kcat_across_isozymes` also exists as a deprecated alias.
+`get_kcat_across_isozymes` also exists as a deprecated alias. By default
+`fill_kcats_from_isozymes` also calls `apply_kcat_constraints` for the
+reactions it filled, so `ec_model.S` reflects the new values immediately;
+pass `apply=False` to only update `ec_model.ec.kcat` and defer applying the
+constraints, matching the MATLAB behavior below.
 :::
 ::::
 
@@ -136,8 +141,10 @@ light ecModel (`ec_model.ec.gecko_light == True`) raises
 
 :::{note} Example output
 `ecModel.ec.kcat` is updated so every isozymic reaction has a value, with
-`ecModel.ec.source` for those reactions reading `isozymes`.
-`ecModel.S` is unaffected until the constraints are applied below.
+`ecModel.ec.source` for those reactions reading `isozymes`. In MATLAB,
+`ecModel.S` is unaffected until the constraints are applied below; in
+Python, `ec_model.S` is already updated for the affected reactions, since
+`fill_kcats_from_isozymes` applies the constraints by default (see above).
 :::
 
 ## Assign a standard kcat value (optional)
@@ -157,11 +164,12 @@ molecular weight is the median across every protein in the organism, and a
 :sync: matlab
 
 ```matlab
-[ecModel, rxnsMissingGPR, standardMW, standardKcat] = getStandardKcat(ecModel);
+[ecModel, rxnsMissingGPR, standardMW, standardKcat, rxnsNoKcat] = getStandardKcat(ecModel);
 ```
 
 The standard MW and the subsystem-agnostic standard kcat are reported in
-`standardMW` and `standardKcat`.
+`standardMW` and `standardKcat`; `rxnsNoKcat` lists the reactions whose
+previously zero or `NaN` kcat was replaced with the standard value.
 :::
 :::{tab-item} 🐍 Python
 :sync: python

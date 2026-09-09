@@ -427,7 +427,7 @@ consumes `prot_pool` to produce `prot_<enzyme>`, and `prot_pool_exchange`
 supplies `prot_pool` in the first place. Every dependent function was
 updated to match: `setProtPoolSize`, `addNewRxnsToEC`, `getStandardKcat`,
 `constrainEnzConcs`, `flexibilizeEnzConcs`, `updateProtPool`,
-`getConcControlCoeffs`, `getSubsetEcModel`, `enzymeUsage`,
+`getConcControlCoeffs`, `getSubsetEcModel`, `getEnzymeUsage`,
 `reportEnzymeUsage` and `sensitivityTuning`. geckopy implements this same
 forward convention throughout, since it targets current GECKO rather than
 the GECKO 3.0 protocol. This changes which bound relaxes a constraint and

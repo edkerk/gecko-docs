@@ -331,21 +331,29 @@ on that rounded space, at the same per-step cost as ACHR once the one-time
 rounding is paid. The result is mixing that no longer depends on how many
 enzyme constraints happen to be near their limit.
 
-**Practical takeaway.** Pass `method="chrr"` (Python) or `'method', 'chrr'`
-(MATLAB) whenever sampling an ecModel, and treat it as closer to mandatory
-the more proteomics data has been integrated, since that is exactly what
-tightens the constraints CHRR's rounding is built to handle. No
-CHRR-versus-ACHR convergence benchmark specific to an ecModel exists in
-this repository yet; the argument above is the documented mechanism, not a
-measurement. What has been measured, on a conventional genome-scale model
-with no enzyme constraints at all, is that ACHR mixing at that scale is
-already slow: RAVEN and raven-toolbox give between-chain agreement
-(Gelman-Rubin R-hat) only after several thousand samples on yeast-GEM, in
+**Practical takeaway is more limited than the mechanism above suggests.**
 [raven-docs' convergence
-study](https://github.com/edkerk/raven-docs/blob/main/docs/parameter-tuning/studies/sampling-convergence-calibration.md).
-An ecModel starts from that same genome-scale baseline and adds the
-capacity-bound geometry on top; the case for CHRR compounds rather than
-replaces it.
+study](https://github.com/edkerk/raven-docs/blob/main/docs/parameter-tuning/studies/sampling-convergence-calibration.md)
+measured both methods on a conventional (non-enzyme-constrained) GEM, not
+an ecModel, and its results argue against treating `method="chrr"` as a
+default rather than for it. At genome scale on yeast-GEM, ACHR's default
+settings are clearly unconverged (median Gelman-Rubin R-hat 1.17 across
+four chains, two in three reactions failing even the loose 1.1 threshold).
+CHRR fixes convergence convincingly on a small model (`e_coli_core`, 95
+reactions: worst R-hat drops from 1.30 to 1.02) but costs about 20 times
+longer there, and a bounded probe at yeast-GEM scale measured roughly 80
+minutes of fixed, per-chain rounding cost before a single sample is drawn,
+comparable to a full 300-sample ACHR run. That probe had too few samples
+for a stable R-hat, so whether CHRR actually converges well at genome scale
+is untested, not confirmed; the study's own conclusion is that no cheap,
+validated fix exists yet at that scale, for a conventional GEM let alone an
+ecModel with tighter constraints on top.
+
+Treat sampled flux ranges from either method as provisional at genome
+scale until they have been checked (for example, that R-hat on the
+reactions of interest is close to 1 across independent chains), and budget
+for CHRR's fixed per-chain cost explicitly if using it, rather than
+reaching for it as an assumed drop-in fix.
 
 ::::{tab-set}
 :::{tab-item} Ⓜ️ MATLAB

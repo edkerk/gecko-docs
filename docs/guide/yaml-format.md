@@ -118,7 +118,7 @@ a reaction across isozymes (`_EXP_<N>` suffix) or into forward/reverse pairs
 | Field | Type | Required? | Notes |
 |---|---|---|---|
 | `id` | string | yes | Matches a model reaction id; may carry `_EXP_<N>` and/or `_REV` suffixes |
-| `kcat` | number | yes | Turnover number in s⁻¹; write NaN as `.nan` |
+| `kcat` | number | yes | Turnover number in s⁻¹; `0` marks a reaction with no kcat assigned yet |
 | `source` | string | optional | Where the kcat came from (`"brenda"`, `"dlkcat"`, `"manual"`, ...); default `""` |
 | `notes` | string | optional | Free-form note; default `""` |
 | `eccodes` | string or list | optional | One EC code as a string, or a list when several apply; default `""` |
@@ -135,6 +135,10 @@ Example:
     P00045: 1
     P32891: 1
 ```
+
+A reaction with no kcat assigned yet is written as `kcat: 0`, the sentinel
+both toolboxes use for "unknown", so it round-trips back to `0` rather than
+being inferred as an omission.
 
 ## `ec-enzymes`: per-enzyme ec data
 
@@ -165,9 +169,10 @@ Example:
 
 To keep files compact, a writer can omit any field that takes its documented
 default (empty string, NaN); a reader fills the default back in on load. The
-exception is a numeric NaN meant to stay explicit, for example a kcat that
-is deliberately left unknown: write it as `.nan` so a reader sees it rather
-than inferring an omission.
+exception is a numeric value meant to stay explicit rather than be inferred
+as an omission: a `mw` or `concs` that is deliberately unknown is written as
+`.nan`, and a `kcat` with no value assigned is written as `0`, its own
+sentinel (see the `ec-rxns` section above).
 
 ## Legacy MATLAB / RAVEN format
 
@@ -177,18 +182,22 @@ geckopy load it: geckopy's loader normalizes it on read, and RAVEN's
 
 | Aspect | Legacy MATLAB / RAVEN | Current (cobrapy + GECKO keys) |
 |---|---|---|
-| Top-level `id` / `name` / `version` | nested under `metaData` | top level, where cobra reads them |
 | `smiles` per metabolite | top-level metabolite key | under `annotation`, as `{smiles: ["..."]}` |
 | Annotation values | scalar strings | list of strings |
 | `metaData.geckoLight` | inside `metaData`, string `"true"` / `"false"` | top-level `gecko_light: <bool>` |
+| `usage_prot_*` / `prot_pool_exchange` bounds | reverse direction (`lb=-1000, ub=0`) | forward direction (`lb=0, ub=1000`) |
 | Outer `---` document marker | present | absent, cobra omits it |
 | `metaData` provenance fields | inside `metaData` | inside `metaData` (unchanged) |
 
-Normalizing a legacy file lifts `id` / `name` / `version` to the top level
-and moves any per-metabolite `smiles` field into `annotation`; cobra
-tolerates the scalar-vs-list difference in annotation values on read. A
-legacy file written as a bare `---` sequence of single-key maps (with no
-`!!omap`) is merged into one mapping by geckopy's reader. The two layouts
+The model `id` itself stays nested under `metaData` in both the legacy and
+the current format; it is not a schema difference between them. Normalizing
+a legacy file moves any per-metabolite `smiles` field into `annotation`;
+cobra tolerates the scalar-vs-list difference in annotation values on read. A
+reader also flips any `usage_prot_*` / `prot_pool_exchange` reaction still
+using the reverse-direction bounds to the current forward convention,
+warning once. A legacy file written as a bare `---` sequence of single-key
+maps (with no `!!omap`) is merged into one mapping by geckopy's reader. The
+two layouts
 hold the same information; both toolboxes' readers accept either one.
 
 ## See also
