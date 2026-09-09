@@ -164,6 +164,7 @@ rely only on measured kinetics.
 
 ## Where to go next
 
-[Getting started](getting-started.md) covers installing GECKO or geckopy and
-loading a first model. [Building an ecModel](building-ec-model.md) walks
+[Installation](../installation/index.md) covers setting up GECKO or
+geckopy. [Getting started](getting-started.md) then scaffolds a project and
+loads a first model, and [Building an ecModel](building-ec-model.md) walks
 through expanding a conventional GEM into ecModel structure.

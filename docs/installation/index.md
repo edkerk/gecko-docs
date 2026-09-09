@@ -77,8 +77,7 @@ checkInstallation;
 
 raven-toolbox is a dependency of geckopy and installs automatically with it
 (see [GECKO Toolbox / geckopy](#gecko-toolbox-geckopy) below); there is no
-separate installation step. raven-toolbox is also not yet on PyPI, so
-geckopy's install command pulls it directly from GitHub.
+separate installation step.
 :::
 ::::
 
@@ -120,17 +119,30 @@ GECKOInstaller.uninstall
 :::{tab-item} 🐍 Python
 :sync: python
 
-geckopy and raven-toolbox are not yet on PyPI, so both install directly from
-their GitHub `develop` branches:
+geckopy and raven-toolbox are both pre-release on PyPI, so `--pre` is
+required:
+
+```bash
+pip install --pre geckopy
+```
+
+geckopy's dependency on raven-toolbox already names a pre-release specifier,
+which opts pip into matching pre-releases for that package too; `--pre`
+alone is enough, raven-toolbox does not need naming separately. To pin the
+exact versions of both instead of "whatever's newest":
+
+```bash
+pip install raven-toolbox==3.0.0b1 geckopy==4.0.0b1
+```
+
+For the development branch, ahead of the latest PyPI release, install from
+GitHub instead:
 
 ```bash
 pip install \
     git+https://github.com/SysBioChalmers/raven-toolbox.git@develop \
     git+https://github.com/SysBioChalmers/geckopy.git@develop
 ```
-
-Once both packages are published to PyPI, this collapses to
-`pip install geckopy` (raven-toolbox is pulled in transitively).
 
 Verify the install:
 

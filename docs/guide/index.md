@@ -26,63 +26,60 @@ mechanically between the two (`camelCase` vs. `snake_case`); see
 
 ## Pages
 
-**Foundations**
+**Start**
 
-1. [Introduction](introduction.md), what an ecModel is and how enzyme
-   constraints are added to a conventional GEM.
-2. [Getting started](getting-started.md), install GECKO or geckopy and load
-   a first model.
-3. [Building an ecModel](building-ec-model.md), expand a conventional GEM
+- [Introduction to ecModels](introduction.md), what an ecModel is and how
+  enzyme constraints are added to a conventional GEM.
+- [Installation](../installation/index.md), set up GECKO or geckopy.
+
+**Guide**, the steps that build and analyze an ecModel, in order:
+
+1. [Getting started](getting-started.md), scaffold a project and load a
+   first model.
+2. [Building an ecModel](building-ec-model.md), expand a conventional GEM
    into ecModel structure.
-
-**Building the ecModel**
-
-4. [GECKO light vs. full ecModels](gecko-light.md), the two ecModel layouts,
-   what light gives up, and when to choose each.
-5. [Gathering kcat values](gathering-kcats.md), collect turnover numbers from
-   BRENDA and DLKcat.
-6. [Applying kcat values](applying-kcats.md), write collected kcat values
+3. [Gathering kcat values](gathering-kcats.md), collect turnover numbers
+   from BRENDA and DLKcat.
+4. [Applying kcat values](applying-kcats.md), write collected kcat values
    into the ecModel's enzyme constraints.
-
-**Tuning**
-
-7. [Growth-rate tuning](growth-rate-tuning.md), close the gap between a
+5. [Growth-rate tuning](growth-rate-tuning.md), close the gap between a
    freshly built ecModel's growth rate and the organism's actual one.
-8. [Tuning against experimental data](tuning-against-experimental-data.md),
+6. [Tuning against experimental data](tuning-against-experimental-data.md),
    curate the kcat values tuning identified as limiting.
-
-**Proteomics**
-
-9. [Proteomics integration](proteomics-integration.md), constrain individual
-   enzyme concentrations from measured proteomics data.
-10. [Relaxing overconstrained proteomics](relaxing-constraints.md), two ways
-    to loosen proteomics constraints that leave the ecModel unable to reach
-    its intended growth rate.
-
-**Simulation and analysis**
-
-11. [Simulation and analysis](simulation-and-analysis.md), objective choice,
-    flux variability, mapping ecModel fluxes back to a conventional GEM, and
-    context-specific ecModels.
-12. [Enzyme usage and bottlenecks](enzyme-usage-and-bottlenecks.md), which
+7. [Proteomics integration](proteomics-integration.md), constrain
+   individual enzyme concentrations from measured proteomics data.
+8. [Relaxing overconstrained proteomics](relaxing-constraints.md), two ways
+   to loosen proteomics constraints that leave the ecModel unable to reach
+   its intended growth rate.
+9. [Simulation and analysis](simulation-and-analysis.md), objective choice,
+   flux variability, sampling, mapping ecModel fluxes back to a
+   conventional GEM, and context-specific ecModels.
+10. [Enzyme usage and bottlenecks](enzyme-usage-and-bottlenecks.md), which
     enzymes a solution uses, and which ones are actually limiting the
     objective.
 
-**Reference**
+**Background**, reference material the Guide pages above link out to rather
+than repeat:
 
-13. [ecModel YAML format](yaml-format.md), the file format both toolboxes
-    read and write, field by field.
+- [GECKO light vs. full ecModels](gecko-light.md), the two ecModel layouts,
+  what light gives up, and when to choose each.
+- [ecModel YAML format](yaml-format.md), the file format both toolboxes
+  read and write, field by field.
+- [Files in the data folder](data-folder-files.md), every file a project's
+  `data` folder can hold.
+- [Model adapter parameters](model-adapter-parameters.md), every model
+  adapter parameter, in both languages.
 
 ## Approximate timing
 
-Rough wall-clock time for a first pass through each stage of work, on a
+Rough wall-clock time for a first pass through each Guide step, on a
 genome-scale model such as yeast-GEM. Actual timing depends heavily on model
 size, internet connection, and which solver is configured.
 
 | Pages | Approx. timing | Notes |
 |---|---|---|
 | Getting started, Building an ecModel | 15 min | |
-| GECKO light vs. full, Gathering kcats, Applying kcats | 1 h | DLKcat prediction accounts for most of it |
+| Gathering kcats, Applying kcats | 1 h | DLKcat prediction accounts for most of it |
 | Growth-rate tuning, Tuning against experimental data | 15 min | |
 | Proteomics integration | 15 min | |
 | Relaxing overconstrained proteomics | 15 min | can take longer with lower-quality proteomics data, more enzymes need flexibilizing |
@@ -100,8 +97,9 @@ size, internet connection, and which solver is configured.
 
 ```{toctree}
 :hidden:
-:caption: Installation
+:caption: Start
 
+introduction
 ../installation/index
 ```
 
@@ -109,10 +107,8 @@ size, internet connection, and which solver is configured.
 :hidden:
 :caption: Guide
 
-introduction
 getting-started
 building-ec-model
-gecko-light
 gathering-kcats
 applying-kcats
 growth-rate-tuning
@@ -121,5 +117,14 @@ proteomics-integration
 relaxing-constraints
 simulation-and-analysis
 enzyme-usage-and-bottlenecks
+```
+
+```{toctree}
+:hidden:
+:caption: Background
+
+gecko-light
 yaml-format
+data-folder-files
+model-adapter-parameters
 ```

@@ -9,13 +9,25 @@
 ## Install
 
 ::::{tab-set}
-:::{tab-item} Python (pip, from GitHub)
+:::{tab-item} Python (PyPI)
+
+```bash
+pip install --pre geckopy
+```
+
+`--pre` is required while geckopy and raven-toolbox are pre-releases on
+PyPI.
+:::
+:::{tab-item} Python (Git)
 
 ```bash
 pip install \
     git+https://github.com/SysBioChalmers/raven-toolbox.git@develop \
     git+https://github.com/SysBioChalmers/geckopy.git@develop
 ```
+
+Tracks the `develop` branch of both packages, ahead of the latest PyPI
+release.
 :::
 :::{tab-item} MATLAB (Add-Ons)
 
@@ -40,11 +52,6 @@ Convert a conventional GEM into an ecModel by bounding reaction rates with
 enzyme kcat and abundance.
 :::
 
-:::{grid-item-card} DLKcat kinetics
-Fill in missing turnover numbers with deep-learning-predicted kcat values, no
-experimental data required.
-:::
-
 :::{grid-item-card} Proteomics integration
 Constrain individual enzyme usage with absolute or relative proteomics
 measurements.
@@ -53,15 +60,6 @@ measurements.
 :::{grid-item-card} Light ecModels
 A smaller, faster-simulating ecModel variant for when full proteome coverage
 isn't needed.
-:::
-
-:::{grid-item-card} RAVEN-based reconstruction
-Structure expansion and model tuning built on the RAVEN toolbox's
-reconstruction functions.
-:::
-
-:::{grid-item-card} Simulation and analysis
-Flux analysis and enzyme-usage assessment of the resulting ecModel.
 :::
 
 ::::

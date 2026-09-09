@@ -379,50 +379,41 @@ model = cobra.io.read_sbml_model(r"C:\path\to\ecModelFull.xml")
 ## Box 1: Extension of a conventional GEM
 
 Converting a conventional GEM into an empty ecModel runs up to twelve
-operations, some of which are skipped for light models.
+operations in order. Four are skipped for light ecModels, which is exactly
+what makes a light ecModel smaller: it never gets the per-isozyme reaction
+splits or the per-enzyme pseudo-metabolites and usage reactions that make a
+full ecModel expensive to simulate.
 
-1. Gene associations are removed from pseudo-reactions, since these are not
-   assumed to be realistic enzyme-catalyzed reactions. Such reactions are
-   identified either by a reaction name containing `pseudoreaction`, or by
-   a reaction identifier listed in `data/pseudoRxns.tsv`.
-2. Irreversible reactions allowed to carry only a negative flux (lower
-   bound < 0 and upper bound = 0) are inverted.
-3. An `ecModel.rev` vector, recording which reactions are reversible, is
-   built from the lower- and upper-bound vectors.
-4. Nearly all reversible reactions split into forward and reverse
-   reactions, yielding an irreversible ecModel. The new (previously
-   reverse) reactions get `_REV` appended to their identifier; the forward
-   reaction keeps its identifier. Exchange reactions are the only
-   exception: they keep their original form and can still carry a negative
-   flux.
-5. *(Skipped for light ecModels)* Reactions catalyzed by isozymes
-   (indicated by `or` in `ecModel.grRules`) split so each reaction is
-   catalyzed by one enzyme or complex. The new reactions carry the suffix
-   `_EXP_` followed by a sequential number: reaction `r_0001` catalyzed by
-   two isozymes becomes `r_0001_EXP_1` and `r_0001_EXP_2`, and a backward
-   reaction `r_0001_REV` becomes `r_0001_REV_EXP_1` and
-   `r_0001_REV_EXP_2`. Light ecModels keep the original identifiers.
-6. An empty `ecModel.ec` structure is built, to be populated with enzymes,
-   kcat values and reaction-enzyme associations later. (Python:
-   `ec_model.ec`, an `EcData` instance with the same fields under
-   snake_case names; see
-   [the ecModel.ec structure](applying-kcats.md#the-ecmodelec-structure).)
-7. Enzyme details such as MW and amino acid sequence are added to
-   `ecModel.ec`, gathered from UniProt using the UniProt parameters in the
-   model adapter.
-8. `ecModel.ec.rxnEnzMat` (Python: `ec_model.ec.rxn_enz_mat`) records which
-   reactions are catalyzed by which enzymes, initially as a 1, later
-   modifiable to reflect different subunit numbers in a complex.
-9. *(Skipped for light ecModels)* Enzymes are added as pseudo-metabolites
-   and appear in `ecModel.mets` prefixed `prot_` followed by the protein
-   identifier. For example, *S. cerevisiae* enolase gene YHR174W, UniProt
-   identifier P00925, appears as pseudo-metabolite `prot_P00925`.
-10. A protein pool pseudo-metabolite is added to `ecModel.mets`.
-11. *(Skipped for light ecModels)* Usage reactions are added for the enzyme
-    pseudo-metabolites, replenishing the enzymes consumed by catalyzing
-    reactions. Their identifiers are `usage_` followed by the enzyme
-    metabolite identifier, for example `usage_prot_P00925`.
-12. An exchange reaction for the `prot_pool` pseudo-metabolite is added.
+:::{dropdown} All twelve steps, full vs. light
+:open:
+
+| # | Operation | Full | Light |
+|---|---|:---:|:---:|
+| 1 | Remove gene associations from pseudo-reactions (name contains `pseudoreaction`, or listed in `data/pseudoRxns.tsv`) | ✅ | ✅ |
+| 2 | Invert irreversible reactions that carry only negative flux (lower bound < 0, upper bound = 0) | ✅ | ✅ |
+| 3 | Build the `ecModel.rev` reversibility vector from the bound vectors | ✅ | ✅ |
+| 4 | Split reversible reactions into forward and reverse copies (`_REV` suffix on the reverse copy; exchange reactions keep their original, still-reversible form) | ✅ | ✅ |
+| 5 | Split isozyme-catalyzed reactions (`or` in `ecModel.grRules`) into one reaction per isozyme (`_EXP_1`, `_EXP_2`, …) | ✅ | -- |
+| 6 | Build an empty `ecModel.ec` structure (Python: `ec_model.ec`, an `EcData` instance) | ✅ | ✅ |
+| 7 | Add enzyme MW and sequence to `ecModel.ec`, from UniProt via the model adapter | ✅ | ✅ |
+| 8 | Record reaction-enzyme associations in `ecModel.ec.rxnEnzMat` (Python: `ec_model.ec.rxn_enz_mat`) | ✅ | ✅ |
+| 9 | Add each enzyme as a `prot_<uniprot ID>` pseudo-metabolite | ✅ | -- |
+| 10 | Add the protein pool pseudo-metabolite | ✅ | ✅ |
+| 11 | Add `usage_prot_<uniprot ID>` reactions for each enzyme pseudo-metabolite | ✅ | -- |
+| 12 | Add the `prot_pool` exchange reaction | ✅ | ✅ |
+
+Step 5's new reaction identifiers: reaction `r_0001` catalyzed by two
+isozymes becomes `r_0001_EXP_1` and `r_0001_EXP_2`; a backward reaction
+`r_0001_REV` becomes `r_0001_REV_EXP_1` and `r_0001_REV_EXP_2`. Light
+ecModels keep the original identifiers throughout, since this step is
+skipped. Step 9's example: *S. cerevisiae* enolase gene YHR174W, UniProt
+identifier P00925, appears as pseudo-metabolite `prot_P00925`. Step 11's
+identifiers are `usage_` followed by the enzyme metabolite identifier, for
+example `usage_prot_P00925`. See [the ecModel.ec
+structure](applying-kcats.md#the-ecmodelec-structure) for what step 6
+populates later, and [GECKO light vs. full
+ecModels](gecko-light.md) for why the four full-only steps matter.
+:::
 
 :::{tip} GECKO 4: usage and pool exchange reactions already run forward
 Steps 11 and 12 above describe the original GECKO 3.0 protocol, where both
