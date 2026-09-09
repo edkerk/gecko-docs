@@ -63,10 +63,11 @@ html_theme_options = {
     "github_url": "https://github.com/SysBioChalmers/GECKO",
     "use_edit_page_button": False,
     "navbar_end": ["theme-switcher", "navbar-icon-links"],
+    # The full wordmark, not just the icon, in the navbar; there is no
+    # separate dark-mode wordmark asset, so both modes use the same file.
     "logo": {
-        "image_light": "assets/gecko-icon-green.png",
-        "image_dark": "assets/gecko-icon-white.png",
-        "text": "GECKO",
+        "image_light": "assets/gecko-logo.png",
+        "image_dark": "assets/gecko-logo.png",
     },
     "announcement": (
         "This site documents GECKO <strong>4.0.0b1</strong> "
