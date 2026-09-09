@@ -69,7 +69,7 @@ solver Gurobi are on the
 After finishing installation, run the checks in MATLAB:
 
 ```matlab
-checkInstallation;
+checkRaven;
 ```
 :::
 :::{tab-item} 🐍 Python
