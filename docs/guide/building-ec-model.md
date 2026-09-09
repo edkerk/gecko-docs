@@ -338,10 +338,14 @@ ecModel = readYAMLmodel('C:\path\to\ecModel.yml');
 ```
 
 For constraint-based analysis in other software, SBML (with an XML
-extension) is often more suitable. `exportModel` and `importModel` handle
-this, but the file does not retain the `ecModel.ec` fields:
+extension) is often more suitable. `saveEcModel` writes SBML too, when
+`filename` ends in `.xml` rather than `.yml`; `exportModel` and
+`importModel` do the same for an arbitrary path. Either way, the file does
+not retain the `ecModel.ec` fields, so an SBML-saved ecModel cannot be
+loaded back into MATLAB for further GECKO functions:
 
 ```matlab
+saveEcModel(ecModel, 'ecModelFull.xml');
 exportModel(ecModel, 'C:\path\to\ecModelFull.xml');
 ecModel = importModel('C:\path\to\ecModelFull.xml');
 ```
