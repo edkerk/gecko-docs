@@ -71,19 +71,35 @@ html[data-theme="dark"] {
 
 /* ===== Home page hero ================================================= */
 .gd-hero { text-align: center; padding: 1.5rem 0 1rem; }
+/* Logo and badge share a row, bottom edges level; wraps to stacked/centered
+   on narrow viewports instead of squeezing side by side. */
+.gd-hero-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: .6rem;
+  margin-bottom: .9rem;
+}
 .gd-hero img.gd-hero-logo {
-  max-width: 380px; width: 100%; height: auto; margin-bottom: .5rem;
+  max-width: 380px; width: 100%; height: auto;
   /* pydata-sphinx-theme gives content images a white backing (right for a
      transparent screenshot on a dark background, wrong for this logo,
      which is already transparent and reads fine on either theme). */
   background-color: transparent !important;
 }
 .gd-tag {
+  /* margin: 0, not just an absent margin-bottom: the theme's own paragraph
+     spacing (`.bd-article p`) outranks a bare `.gd-tag` margin-bottom that
+     isn't set at all, and any bottom margin here would shift the badge up
+     off the logo's bottom edge in the flex row below (.gd-hero-top,
+     align-items: flex-end). */
   display: inline-block; font-size: .7rem; font-weight: 700;
   letter-spacing: .07em; text-transform: uppercase;
   color: var(--gecko-green);
   background: rgba(67,104,75,.12);
-  border-radius: 20px; padding: .2rem .75rem; margin-bottom: .6rem;
+  border-radius: 20px; padding: .2rem .75rem;
+  margin: 0;
 }
 .gd-tagline {
   font-size: .95rem; color: var(--pst-color-text-muted);
